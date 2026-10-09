@@ -1,0 +1,15 @@
+export const COUNTRIES = [
+  { code: "KE", name: "Kenya", dial: "254", currency: "KES" },
+  { code: "MW", name: "Malawi", dial: "265", currency: "MWK" },
+  { code: "ZM", name: "Zambia", dial: "260", currency: "ZMW" },
+  { code: "UG", name: "Uganda", dial: "256", currency: "UGX" },
+  { code: "NG", name: "Nigeria", dial: "234", currency: "NGN" },
+  { code: "TZ", name: "Tanzania", dial: "255", currency: "TZS" },
+  { code: "BW", name: "Botswana", dial: "267", currency: "BWP" },
+  { code: "CM", name: "Cameroon", dial: "237", currency: "XAF" },
+  { code: "GH", name: "Ghana", dial: "233", currency: "GHS" },
+  { code: "BI", name: "Burundi", dial: "257", currency: "BIF" },
+  { code: "RW", name: "Rwanda", dial: "250", currency: "RWF" },
+  { code: "CD", name: "DR Congo", dial: "243", currency: "CDF" },
+  { code: "SS", name: "South Sudan", dial: "211", currency: "SSP" },
+] as const;

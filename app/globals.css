@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #F0F3FA;
+  --color-brand-100: #D5DEEF;
+  --color-brand-200: #B1C9EF;
+  --color-brand-300: #8AAEE0;
+  --color-brand-400: #628ECB;
+  --color-brand-500: #395886;
+  --color-brand-900: #1E2F4D; /* extra dark navy for text */
+
+  --color-gold-100: #FFE082;
+  --color-gold-300: #FCC72A;
+  --color-gold-400: #F0B71F;
+  --color-gold-500: #E8A317;
+  --color-gold-600: #D4900F;
+   --animate-marquee: marquee 35s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+}
