@@ -41,7 +41,7 @@ export default defineSchema({
   // A record of every payment attempt
   payments: defineTable({
     userId: v.id("users"),
-    purpose: v.optional(v.union(v.literal("membership"), v.literal("deposit"))), // NEW: Tells the system what this is for
+    purpose: v.optional(v.union(v.literal("membership"), v.literal("deposit"))),
     provider: v.union(
       v.literal("mpesa"),
       v.literal("manual"),
@@ -83,9 +83,11 @@ export default defineSchema({
       v.literal("youtube"),
       v.literal("tiktok"),
       v.literal("blog"),
-      v.literal("deposit") // NEW: Allows direct wallet funding
+      v.literal("deposit")
     ),
     fromUserId: v.optional(v.id("users")),
+    sourceCountry: v.optional(v.string()), // Tracks where the referral came from
+    sourceUsername: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_user_source", ["userId", "source"]),
@@ -106,4 +108,11 @@ export default defineSchema({
     paymentDetails: v.string(),
     processedAt: v.optional(v.number()),
   }).index("by_user", ["userId"]),
+
+  // NEW: Live exchange rates for cross-border referrals
+  exchangeRates: defineTable({
+    currency: v.string(), 
+    rateToKES: v.number(), 
+    updatedAt: v.number(),
+  }).index("by_currency", ["currency"]),
 });

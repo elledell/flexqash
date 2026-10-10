@@ -25,6 +25,7 @@ import type * as membership from "../membership.js";
 import type * as paymentInstructions from "../paymentInstructions.js";
 import type * as payments_mpesa from "../payments/mpesa.js";
 import type * as payments_routing from "../payments/routing.js";
+import type * as rates from "../rates.js";
 import type * as team from "../team.js";
 import type * as users from "../users.js";
 import type * as withdrawals from "../withdrawals.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   paymentInstructions: typeof paymentInstructions;
   "payments/mpesa": typeof payments_mpesa;
   "payments/routing": typeof payments_routing;
+  rates: typeof rates;
   team: typeof team;
   users: typeof users;
   withdrawals: typeof withdrawals;

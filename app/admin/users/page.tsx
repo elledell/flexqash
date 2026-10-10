@@ -3,9 +3,12 @@
 import { useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
+import "flag-icons/css/flag-icons.min.css";
 
 export default function UsersManagementPage() {
   const [search, setSearch] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  
   const data = useQuery(api.adminUsers.listUsers, { searchTerm: search });
 
   if (data === undefined) {
@@ -13,7 +16,7 @@ export default function UsersManagementPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="mx-auto max-w-7xl relative">
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold text-[#112a46]">Users Management</h1>
       </div>
@@ -81,7 +84,7 @@ export default function UsersManagementPage() {
                 <th className="px-6 py-4 font-bold">Total Earned</th>
                 <th className="px-6 py-4 font-bold">Joined</th>
                 <th className="px-6 py-4 font-bold">Status</th>
-                <th className="px-6 py-4 font-bold text-center">Actions</th>
+                <th className="px-6 py-4 font-bold text-center">Network</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -120,7 +123,10 @@ export default function UsersManagementPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button className="text-gray-400 hover:text-[#112a46] font-bold tracking-widest px-2">
+                      <button 
+                        onClick={() => setSelectedUserId(user._id)}
+                        className="text-gray-400 hover:text-[#112a46] font-bold tracking-widest px-2"
+                      >
                         •••
                       </button>
                     </td>
@@ -129,6 +135,77 @@ export default function UsersManagementPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Network Modal Overlay */}
+      {selectedUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#112a46]/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-xl font-extrabold text-[#112a46]">Referral Network</h3>
+              <button onClick={() => setSelectedUserId(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-500 hover:bg-gray-200">
+                ✕
+              </button>
+            </div>
+            <UserNetworkView userId={selectedUserId} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- NETWORK VIEW COMPONENT ---
+function UserNetworkView({ userId }: { userId: string }) {
+  const network = useQuery(api.adminUsers.getUserNetwork, { userId: userId as any });
+
+  if (network === undefined) return <div className="text-sm text-gray-500 text-center py-8">Loading network...</div>;
+  if (!network) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* UPLINK */}
+      <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+        <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">Referred By (Uplink)</h4>
+        {network.upline ? (
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className={`fi fi-${network.upline.country.toLowerCase()} rounded-sm text-xl shadow-sm`} />
+              <span className="font-bold text-[#112a46]">{network.upline.name}</span>
+            </div>
+            <span className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase ${network.upline.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
+              {network.upline.status}
+            </span>
+          </div>
+        ) : (
+          <p className="text-sm font-medium text-gray-500">Joined organically (No referrer)</p>
+        )}
+      </div>
+
+      {/* DOWNLINE */}
+      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400">Their Referrals (Downline)</h4>
+          <span className="text-xs font-bold text-[#1abc9c]">{network.activeReferred} Active / {network.totalReferred} Total</span>
+        </div>
+        
+        <div className="max-h-60 space-y-2 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
+          {network.downline.length > 0 ? (
+            network.downline.map((ref, idx) => (
+              <div key={idx} className="flex items-center justify-between rounded-lg border border-transparent p-2 transition hover:border-gray-100 hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <span className={`fi fi-${ref.country.toLowerCase()} rounded-sm shadow-sm`} />
+                  <span className="text-sm font-bold text-[#112a46]">{ref.name}</span>
+                </div>
+                <span className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase ${ref.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
+                  {ref.status}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="py-4 text-center text-sm text-gray-400">This user hasn't referred anyone yet.</p>
+          )}
         </div>
       </div>
     </div>

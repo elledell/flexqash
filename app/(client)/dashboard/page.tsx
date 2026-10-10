@@ -53,8 +53,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Total Earnings Card - Changed to RED */}
-      <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#e74c3c] to-[#c0392b] p-6 text-white shadow-lg sm:p-8">
+      {/* Main Total Earnings Card - Changed to GOLD */}
+      <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#b38728] p-6 text-white shadow-lg sm:p-8">
         <div className="mb-4 flex items-center gap-2 text-sm font-medium opacity-90">
           <span>📍 Hello, {stats.username}</span>
           <span>👋</span>

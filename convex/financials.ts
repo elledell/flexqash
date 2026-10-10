@@ -22,7 +22,7 @@ export const COUNTRY_FINANCIALS: Record<
   SS: { currency: "SSP", l1: 13162, l2: 6449, l3: 2501, minWithdrawal: 20000, withdrawalFee: 5700 },
   NG: { currency: "NGN", l1: 3726, l2: 1858, l3: 647, minWithdrawal: 8500, withdrawalFee: 1500 },
   CD: { currency: "CDF", l1: 0, l2: 0, l3: 0, minWithdrawal: 15000, withdrawalFee: 2500 },
-  INTL: { currency: "USD", l1: 3, l2: 1.2, l3: 0.6, minWithdrawal: 10, withdrawalFee: 1 },
+  INTL: { currency: "USD", l1: 3.14, l2: 1.25, l3: 0.62, minWithdrawal: 10, withdrawalFee: 1 }, // Converted from KSH to approx USD
 };
 
 export interface TierFee {

@@ -65,3 +65,45 @@ export const listUsers = query({
     };
   }
 });
+export const getUserNetwork = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    await requireAdmin(ctx);
+
+    const user = await ctx.db.get(userId);
+    if (!user) return null;
+
+    // 1. Find the Uplink (Who invited this user?)
+    let upline = null;
+    if (user.invitedBy) {
+      const parent = await ctx.db.get(user.invitedBy);
+      if (parent) {
+        upline = {
+          name: parent.username || parent.name || "Unknown",
+          country: parent.country || "KE",
+          status: parent.membership,
+        };
+      }
+    }
+
+    // 2. Find the Downline (Who did this user invite?)
+    const downlineDocs = await ctx.db
+      .query("users")
+      .withIndex("by_invitedBy", (q) => q.eq("invitedBy", userId))
+      .collect();
+
+    const downline = downlineDocs.map((d) => ({
+      name: d.username || d.name || "Unknown",
+      country: d.country || "KE",
+      status: d.membership,
+      joinedAt: d._creationTime,
+    }));
+
+    return {
+      upline,
+      downline,
+      totalReferred: downline.length,
+      activeReferred: downline.filter((d) => d.status === "active").length,
+    };
+  },
+});

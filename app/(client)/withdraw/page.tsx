@@ -12,7 +12,6 @@ export default function WithdrawPage() {
   const requestWithdrawal = useMutation(api.withdrawals.requestWithdrawal);
 
   const [amount, setAmount] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [method, setMethod] = useState("Mobile Money");
 
@@ -44,8 +43,8 @@ export default function WithdrawPage() {
       setError("Insufficient available balance.");
       return;
     }
-    if (!recipientPhone.trim() || !recipientName.trim()) {
-      setError("Please provide both recipient phone number and full name.");
+    if (!info.phone || !recipientName.trim()) {
+      setError("Please ensure your profile has a phone number and provide the recipient's full name.");
       return;
     }
 
@@ -53,13 +52,12 @@ export default function WithdrawPage() {
     try {
       await requestWithdrawal({
         amount: numAmount,
-        recipientPhone,
+        recipientPhone: info.phone, // Automatically uses their registered number
         recipientName,
         method,
       });
       setSuccess("Withdrawal submitted successfully. Status is currently pending admin payment.");
       setAmount("");
-      setRecipientPhone("");
       setRecipientName("");
     } catch (err) {
       setError(err instanceof ConvexError ? String(err.data) : "Failed to submit withdrawal.");
@@ -134,16 +132,15 @@ export default function WithdrawPage() {
 
             <div>
               <label className="mb-1 block text-sm font-bold text-gray-600">
-                Recipient Phone Number / Account
+                Withdrawal Mobile Number
               </label>
               <input
                 type="text"
-                required
-                placeholder="e.g. 0712345678"
-                value={recipientPhone}
-                onChange={(e) => setRecipientPhone(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
+                readOnly
+                value={info.phone || "No phone linked"}
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-500 outline-none cursor-not-allowed"
               />
+              <p className="mt-1 text-xs text-gray-400">Funds will be sent securely to your registered account number.</p>
             </div>
 
             <div>

@@ -95,7 +95,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="mt-8 mb-2 px-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Configuration</div>
           <nav className="space-y-1">
-           <Link href="/admin/pricing" className={navItemClass("/admin/pricing")}>⚙️ Membership Pricing</Link>
+            <Link href="/admin/rates" className={navItemClass("/admin/rates")}>💱 Exchange Rates</Link>
+            <Link href="/admin/pricing" className={navItemClass("/admin/pricing")}>⚙️ Membership Pricing</Link>
             <Link href="/admin/tasks" className={navItemClass("/admin/tasks")}>⚡ Task Settings</Link>
           </nav>
         </div>
