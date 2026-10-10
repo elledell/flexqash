@@ -141,14 +141,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </nav>
           
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Network</div>
-          <nav className="space-y-4 mb-8">
+          <nav className="mb-8 space-y-4">
             {/* Level 1 Group */}
             <div className="group flex flex-col">
               <Link href="/team/1" className={navItemClass("/team/1")}>
                 <span className="text-lg">👥</span> Level 1 Team
               </Link>
-              {/* hidden by default, flex on hover */}
-              <div className="ml-12 hidden group-hover:flex flex-col space-y-3 mt-3 mb-2">
+              {/* Automatically stays open if we are on the /team/1 page, otherwise hoverable on desktop */}
+              <div className={`ml-12 flex-col space-y-3 mt-3 mb-2 ${pathname.startsWith("/team/1") ? "flex" : "hidden lg:group-hover:flex"}`}>
                 <Link href="/team/1?status=active" className={subLinkClass("/team/1", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -163,7 +163,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               <Link href="/team/2" className={navItemClass("/team/2")}>
                 <span className="text-lg">👥</span> Level 2 Team
               </Link>
-              <div className="ml-12 hidden group-hover:flex flex-col space-y-3 mt-3 mb-2">
+              <div className={`ml-12 flex-col space-y-3 mt-3 mb-2 ${pathname.startsWith("/team/2") ? "flex" : "hidden lg:group-hover:flex"}`}>
                 <Link href="/team/2?status=active" className={subLinkClass("/team/2", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -178,7 +178,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               <Link href="/team/3" className={navItemClass("/team/3")}>
                 <span className="text-lg">👥</span> Level 3 Team
               </Link>
-              <div className="ml-12 hidden group-hover:flex flex-col space-y-3 mt-3 mb-2">
+              <div className={`ml-12 flex-col space-y-3 mt-3 mb-2 ${pathname.startsWith("/team/3") ? "flex" : "hidden lg:group-hover:flex"}`}>
                 <Link href="/team/3?status=active" className={subLinkClass("/team/3", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
