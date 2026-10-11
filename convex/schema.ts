@@ -26,6 +26,7 @@ export default defineSchema({
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
+    .index("username", ["username"])
     .index("referralCode", ["referralCode"])
     .index("by_invitedBy", ["invitedBy"]),
 

@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
+import { api } from "../../../convex/_generated/api";
 import { inputClass, labelClass, primaryButton } from "../../components/ui";
 import PasswordInput from "../../components/PasswordInput";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
+  const resolveIdentifier = useMutation(api.users.resolveLoginIdentifier);
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,15 +21,26 @@ export default function SignInPage() {
     e.preventDefault();
     setError("");
     const form = new FormData(e.currentTarget);
-    form.set("email", String(form.get("email")).trim().toLowerCase());
-    form.set("flow", "signIn");
+    const identifier = String(form.get("identifier") ?? "").trim();
 
     setLoading(true);
     try {
+      // 1. Resolve username or email into the account's registered email
+      const resolvedEmail = await resolveIdentifier({ identifier });
+
+      // 2. Pass the resolved email to Convex Auth
+      form.set("email", resolvedEmail);
+      form.delete("identifier");
+      form.set("flow", "signIn");
+
       await signIn("password", form);
-      router.push("/dashboard"); // dashboard sends admins on to /admin
-    } catch {
-      setError("Invalid email or password.");
+      router.push("/dashboard");
+    } catch (err) {
+      setError(
+        err instanceof ConvexError
+          ? String(err.data)
+          : "Invalid username/email or password."
+      );
       setLoading(false);
     }
   }
@@ -37,8 +52,16 @@ export default function SignInPage() {
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className={labelClass} htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" required placeholder="Enter your email" className={inputClass} />
+          <label className={labelClass} htmlFor="identifier">Email or Username</label>
+          <input
+            id="identifier"
+            name="identifier"
+            type="text"
+            required
+            placeholder="Enter your email or username"
+            autoComplete="username"
+            className={inputClass}
+          />
         </div>
 
         <div>
@@ -60,6 +83,7 @@ export default function SignInPage() {
 
       <p className="mt-5 text-center text-sm text-brand-500">
         Don't have an account?{" "}
+        <Link href="/sign-in" className="hidden" />
         <Link href="/sign-up" className="font-bold text-brand-500 underline">Sign Up</Link>
       </p>
     </>

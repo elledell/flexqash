@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
+import { api } from "../../../convex/_generated/api";
 import { COUNTRIES } from "../../../convex/countries";
 import { inputClass, labelClass, primaryButton } from "../../components/ui";
 import PasswordInput from "../../components/PasswordInput";
@@ -12,6 +15,7 @@ import CountrySelect from "../../components/CountrySelect";
 
 function SignUpForm() {
   const { signIn } = useAuthActions();
+  const validateAvailability = useMutation(api.users.validateSignUpAvailability);
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -29,6 +33,19 @@ function SignUpForm() {
     setError("");
     const form = new FormData(e.currentTarget);
 
+    const username = String(form.get("username") ?? "").trim().toLowerCase();
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    const digits = String(form.get("mobile") ?? "").replace(/\D/g, "").replace(/^0+/, "");
+    const phone = `+${country.dial}${digits}`;
+
+    if (username.length < 3) {
+      setError("Username must be at least 3 characters.");
+      return;
+    }
+    if (!/^[a-z0-9_]+$/.test(username)) {
+      setError("Username can only contain letters, numbers, and underscores (no spaces).");
+      return;
+    }
     if (form.get("password") !== form.get("confirmPassword")) {
       setError("Passwords do not match.");
       return;
@@ -38,19 +55,27 @@ function SignUpForm() {
       return;
     }
 
-    const digits = String(form.get("mobile")).replace(/\D/g, "").replace(/^0+/, "");
-    form.set("phone", `+${country.dial}${digits}`);
-    form.delete("mobile");
-    form.set("email", String(form.get("email")).trim().toLowerCase());
-    form.set("country", countryCode);
-    form.set("flow", "signUp");
-
     setLoading(true);
     try {
+      // 1. Check uniqueness of username, email, and phone first
+      await validateAvailability({ username, email, phone });
+
+      // 2. Proceed with account creation
+      form.set("username", username);
+      form.set("phone", phone);
+      form.delete("mobile");
+      form.set("email", email);
+      form.set("country", countryCode);
+      form.set("flow", "signUp");
+
       await signIn("password", form);
       router.push("/dashboard");
-    } catch {
-      setError("Could not create your account. Check your details, or sign in if you already have one.");
+    } catch (err) {
+      setError(
+        err instanceof ConvexError
+          ? String(err.data)
+          : "Could not create your account. Check your details, or sign in if you already have one."
+      );
       setLoading(false);
     }
   }
@@ -63,7 +88,15 @@ function SignUpForm() {
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label className={labelClass} htmlFor="username">Username</label>
-          <input id="username" name="username" required minLength={3} placeholder="Enter username" className={inputClass} />
+          <input
+            id="username"
+            name="username"
+            required
+            minLength={3}
+            placeholder="e.g. lenah_254"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-brand-400">Letters, numbers, and underscores only.</p>
         </div>
 
         <div>
@@ -108,19 +141,29 @@ function SignUpForm() {
           <PasswordInput id="confirmPassword" name="confirmPassword" placeholder="Confirm password" autoComplete="new-password" />
         </div>
 
-        {/* New Referral Code Field */}
+       {/* Referral Code Field */}
         <div>
-          <label className={labelClass} htmlFor="invitedByCode">Referral Code (Optional)</label>
+          <label className={labelClass} htmlFor="invitedByCode">
+            Referral Code {defaultReferral ? "(Applied)" : "(Optional)"}
+          </label>
           <input 
             id="invitedByCode" 
             name="invitedByCode" 
             type="text" 
             defaultValue={defaultReferral} 
+            readOnly={!!defaultReferral}
             placeholder="Enter invite code if you have one" 
-            className={inputClass} 
+            className={`${inputClass} ${
+              defaultReferral ? "bg-gray-100 text-gray-500 cursor-not-allowed font-semibold" : ""
+            }`} 
           />
-          <p className="mt-1 text-xs text-brand-400">Leave blank if you were not invited.</p>
+          <p className="mt-1 text-xs text-brand-400">
+            {defaultReferral 
+              ? `You were invited by ${defaultReferral}. This code is locked.` 
+              : "Leave blank if you were not invited."}
+          </p>
         </div>
+      
 
         <label className="flex items-start gap-2 text-sm text-brand-500">
           <input type="checkbox" required className="mt-1 h-4 w-4 accent-brand-500" />
