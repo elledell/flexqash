@@ -188,18 +188,54 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </nav>
+<div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Best Features</div>
+          <nav className="space-y-1 mb-6">
+            <Link href="/products/investments" className={navItemClass("/products/investments")}>
+              📈 Investments <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
+            </Link>
+            <Link href="/products/chat" className={navItemClass("/products/chat")}>
+              💬 Chat with Lonely Foreigners <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] font-bold text-white">new</span>
+            </Link>
+            <Link href="/products/hotel-reviews" className={navItemClass("/products/hotel-reviews")}>
+              🏨 Hotel Reviews
+            </Link>
+            <Link href="/products/gigs" className={navItemClass("/products/gigs")}>
+              🎟️ Apply Gigs &amp; Events
+            </Link>
+            <Link href="/products/abroad-jobs" className={navItemClass("/products/abroad-jobs")}>
+              ✈️ Apply for Abroad Jobs <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] font-bold text-white">new</span>
+            </Link>
+            <Link href="/products/forex" className={navItemClass("/products/forex")}>
+              🏦 Forex Lessons
+            </Link>
+          </nav>
 
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Products</div>
           <nav className="space-y-1 mb-8">
-            <Link href="/products/kiswahili" className={navItemClass("/products/kiswahili")}>🇹🇿 Teach Kiswahili <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] text-white">new</span></Link>
-            <Link href="/products/chat" className={navItemClass("/products/chat")}>🌐 Chat with Foreigners</Link>
-            <Link href="/products/marketing" className={navItemClass("/products/marketing")}>🎓 Digital Marketing <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] text-white">new</span></Link>
-            <Link href="/products/forex" className={navItemClass("/products/forex")}>🏦 Forex Lessons</Link>
-            <Link href="/products/cbc" className={navItemClass("/products/cbc")}>📚 CBC Materials</Link>
-            <Link href="/products/aviator" className={navItemClass("/products/aviator")}>📈 Aviator <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] text-red-600">Hot</span></Link>
-            <Link href="/products/spin" className={navItemClass("/products/spin")}>🎡 Spin & Win</Link>
-            <Link href="/products/bets" className={navItemClass("/products/bets")}>⚡ Fixed Bets</Link>
-            <Link href="/products/soccer" className={navItemClass("/products/soccer")}>⚽ Soccer</Link>
+            <Link href="/products/youtube" className={navItemClass("/products/youtube")}>
+              ▶️ YouTube Videos
+            </Link>
+            <Link href="/products/tiktok" className={navItemClass("/products/tiktok")}>
+              🎵 TikTok Videos
+            </Link>
+            <Link href="/products/surveys" className={navItemClass("/products/surveys")}>
+              📋 Surveys
+            </Link>
+            <Link href="/products/reels" className={navItemClass("/products/reels")}>
+              🎬 Reels
+            </Link>
+            <Link href="/products/movies" className={navItemClass("/products/movies")}>
+              🍿 Movies
+            </Link>
+            <Link href="/products/articles" className={navItemClass("/products/articles")}>
+              ✍️ Article Writing
+            </Link>
+            <Link href="/products/spin" className={navItemClass("/products/spin")}>
+              🎡 Spin &amp; Win <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
+            </Link>
+            <Link href="/products/ads" className={navItemClass("/products/ads")}>
+              🖱️ Click Ads
+            </Link>
           </nav>
         </div>
 

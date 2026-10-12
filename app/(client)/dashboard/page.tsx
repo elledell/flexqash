@@ -53,24 +53,26 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Total Earnings Card - Changed to GOLD */}
-      <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#b38728] p-6 text-white shadow-lg sm:p-8">
-        <div className="mb-4 flex items-center gap-2 text-sm font-medium opacity-90">
+     {/* Main Total Earnings Card - Luminous Green Gradient */}
+      <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#00c853] via-[#10b981] to-[#059669] p-6 text-white shadow-xl shadow-emerald-500/20 sm:p-8">
+        <div className="mb-3 flex items-center gap-2 text-base font-extrabold tracking-wide">
           <span>📍 Hello, {stats.username}</span>
           <span>👋</span>
         </div>
-        <p className="mb-8 max-w-2xl text-sm leading-relaxed opacity-90">
+        <p className="mb-8 max-w-2xl text-sm font-bold leading-relaxed text-white/95">
           Welcome to FLEXQASH 🚀 Earn daily — courses, videos, games, trivia & referrals. Withdraw to mobile money!
         </p>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider opacity-80">Total Earnings</p>
-            <h2 className="mt-1 text-4xl font-extrabold">{stats.currency} {stats.totalEarnings.toLocaleString()}</h2>
+            <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Total Earnings</p>
+            <h2 className="mt-1 text-4xl font-black tracking-tight drop-shadow-sm">
+              {stats.currency} {stats.totalEarnings.toLocaleString()}
+            </h2>
           </div>
-          <div className="rounded-xl border border-white/20 bg-white/10 px-6 py-4 text-right backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-wider opacity-80">Expense</p>
-            <p className="text-xl font-bold">{stats.currency} {stats.expense.toLocaleString()}</p>
-            <p className="text-[10px] opacity-70">one-time</p>
+          <div className="rounded-xl border border-white/30 bg-black/15 px-6 py-4 text-right backdrop-blur-md">
+            <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Expense</p>
+            <p className="text-2xl font-black">{stats.currency} {stats.expense.toLocaleString()}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">one-time</p>
           </div>
         </div>
       </div>
@@ -91,11 +93,11 @@ export default function DashboardPage() {
           <p className="mt-4 text-xs uppercase tracking-widest opacity-80">All Time</p>
         </div>
         
-        {/* Affiliate Earnings - Changed to GREEN */}
-        <div className="rounded-2xl bg-[#2ecc71] p-6 text-white shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider opacity-90">Affiliate Earnings</p>
-          <h3 className="mt-2 text-2xl font-extrabold">{stats.currency} {stats.affiliateEarnings.toLocaleString()}</h3>
-          <p className="mt-4 text-xs uppercase tracking-widest opacity-80">All Time</p>
+       {/* Affiliate Earnings - Changed to PURPLE */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] p-6 text-white shadow-md shadow-purple-500/20">
+          <p className="text-xs font-extrabold uppercase tracking-wider opacity-90">Affiliate Earnings</p>
+          <h3 className="mt-2 text-2xl font-black tracking-tight">{stats.currency} {stats.affiliateEarnings.toLocaleString()}</h3>
+          <p className="mt-4 text-xs font-bold uppercase tracking-widest opacity-80">All Time</p>
         </div>
         
         {/* Agent Bonus - Changed to GRAY */}
