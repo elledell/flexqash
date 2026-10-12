@@ -4,6 +4,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { COUNTRIES } from "./countries";
 import { PROVIDER_BY_COUNTRY } from "./payments/routing";
 import { requireAdmin } from "./access";
+import { distributeCommissions } from "./affiliate";
 
 // What the membership page needs to show
 export const status = query({
@@ -203,6 +204,9 @@ export const applyMpesaResult = internalMutation({
       membership: "active",
       membershipPaidAt: Date.now(),
     });
+
+    // Credit Level 1, 2, and 3 uplines on M-Pesa activation!
+    await distributeCommissions(ctx, payment.userId);
   },
 });
 

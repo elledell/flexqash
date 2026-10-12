@@ -2,6 +2,7 @@ import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { requireAdmin } from "./access";
 import { COUNTRIES } from "./countries";
+import { distributeCommissions } from "./affiliate"; // <-- Adjust filename if yours is named differently
 
 const METHOD_LABEL: Record<string, string> = {
   mpesa: "M-Pesa (Kenya)",
@@ -22,7 +23,7 @@ export const list = query({
     ),
   },
   handler: async (ctx, { status }) => {
-    await requireAdmin(ctx); // server-side check
+    await requireAdmin(ctx);
 
     const rows = await ctx.db.query("payments").order("desc").take(300);
 
@@ -85,7 +86,6 @@ export const approvePayment = mutation({
 
     // 2. Route based on payment purpose
     if (payment.purpose === "deposit") {
-      // Credit their wallet ledger directly
       await ctx.db.insert("earnings", {
         userId: payment.userId,
         amount: payment.amount,
@@ -93,14 +93,14 @@ export const approvePayment = mutation({
         source: "deposit",
       });
     } else {
-      // Otherwise, it's a membership activation
+      // Activate membership
       await ctx.db.patch(payment.userId, {
         membership: "active",
         membershipPaidAt: Date.now(),
       });
-      
-      // Note: If you have an affiliate distribution function, you can import and call it here
-      // e.g., await distributeCommissions(ctx, payment.userId);
+
+      // Distribute Level 1, 2, and 3 Referral Commissions!
+      await distributeCommissions(ctx, payment.userId);
     }
 
     return { success: true };
@@ -121,5 +121,23 @@ export const rejectPayment = mutation({
     });
 
     return { success: true };
+  },
+});
+
+// ONE-CLICK SYNC: Retroactively pays out any active referrals that missed their commission (like test2 -> test1)
+export const syncMissingCommissions = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const activeUsers = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("membership"), "active"))
+      .collect();
+
+    for (const u of activeUsers) {
+      if (u.invitedBy) {
+        await distributeCommissions(ctx, u._id);
+      }
+    }
+    return { syncedUsers: activeUsers.length };
   },
 });
