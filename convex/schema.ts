@@ -20,7 +20,6 @@ export default defineSchema({
     membership: v.optional(v.union(v.literal("none"), v.literal("active"))),
     membershipPaidAt: v.optional(v.number()),
 
-    // Affiliate tracking fields
     referralCode: v.optional(v.string()),
     invitedBy: v.optional(v.id("users")),
   })
@@ -30,7 +29,6 @@ export default defineSchema({
     .index("referralCode", ["referralCode"])
     .index("by_invitedBy", ["invitedBy"]),
 
-  // One row per country, configured by admins
   membershipPrices: defineTable({
     country: v.string(),
     currency: v.string(),
@@ -39,25 +37,14 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_country", ["country"]),
 
-  // A record of every payment attempt
   payments: defineTable({
     userId: v.id("users"),
     purpose: v.optional(v.union(v.literal("membership"), v.literal("deposit"))),
-    provider: v.union(
-      v.literal("mpesa"),
-      v.literal("manual"),
-      v.literal("selar"),
-      v.literal("paystack")
-    ),
+    provider: v.union(v.literal("mpesa"), v.literal("manual"), v.literal("selar"), v.literal("paystack")),
     amount: v.number(),
     currency: v.string(),
     phone: v.string(),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("paid"),
-      v.literal("failed"),
-      v.literal("review")
-    ),
+    status: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed"), v.literal("review")),
     methodTitle: v.optional(v.string()),
     transactionRef: v.optional(v.string()),
     transactionId: v.optional(v.string()),
@@ -69,7 +56,6 @@ export default defineSchema({
     .index("by_checkoutRequestId", ["checkoutRequestId"])
     .index("by_user", ["userId"]),
 
-  // Ledger tracking every user credit/earning
   earnings: defineTable({
     userId: v.id("users"),
     amount: v.number(),
@@ -80,40 +66,99 @@ export default defineSchema({
       v.literal("level_3"),
       v.literal("agent_bonus"),
       v.literal("trivia"),
-      v.literal("ads"),
-      v.literal("youtube"),
-      v.literal("tiktok"),
-      v.literal("blog"),
-      v.literal("deposit")
+      v.literal("deposit") 
     ),
     fromUserId: v.optional(v.id("users")),
-    sourceCountry: v.optional(v.string()), // Tracks where the referral came from
+    sourceCountry: v.optional(v.string()), 
     sourceUsername: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_user_source", ["userId", "source"]),
 
-  // Ledger tracking withdrawal requests
   withdrawals: defineTable({
     userId: v.id("users"),
     amount: v.number(),
     fee: v.number(),
     netAmount: v.number(),
     currency: v.string(),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("rejected")
-    ),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
     method: v.string(),
     paymentDetails: v.string(),
     processedAt: v.optional(v.number()),
   }).index("by_user", ["userId"]),
 
-  // NEW: Live exchange rates for cross-border referrals
   exchangeRates: defineTable({
     currency: v.string(), 
     rateToKES: v.number(), 
     updatedAt: v.number(),
   }).index("by_currency", ["currency"]),
+
+  // ------------------------------------------------------------------
+  // ISOLATED ECOSYSTEM
+  // ------------------------------------------------------------------
+  serviceEarnings: defineTable({
+    userId: v.id("users"),
+    amount: v.number(), 
+    source: v.union(
+      v.literal("investment"),
+      v.literal("chat"),
+      v.literal("ads"),
+      v.literal("tiktok"),
+      v.literal("youtube"),
+      v.literal("survey"),
+      v.literal("blog"),
+      v.literal("hotel_review")
+    ),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_source", ["userId", "source"]),
+
+  investmentPackages: defineTable({
+    name: v.string(),
+    cost: v.number(), 
+    dailyRoi: v.number(), 
+    durationDays: v.number(),
+    isActive: v.boolean(),
+  }),
+
+  activeInvestments: defineTable({
+    userId: v.id("users"),
+    packageId: v.id("investmentPackages"),
+    investedAmount: v.number(), 
+    dailyPayoutAmount: v.number(), 
+    startDate: v.number(),
+    endDate: v.number(),
+    lastPayoutDate: v.number(), 
+    status: v.union(v.literal("active"), v.literal("completed")),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
+    // Tracks event gig applications and bidding fees
+  gigApplications: defineTable({
+    userId: v.id("users"),
+    gigId: v.string(), // Links to the static gig ID on the frontend
+    bidCost: v.number(), // The fee deducted to apply
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    appliedAt: v.number(),
+  })
+    .index("by_user_gig", ["userId", "gigId"])
+    .index("by_user", ["userId"]),
+
+  // ------------------------------------------------------------------
+  // HOTEL REVIEWS
+  // ------------------------------------------------------------------
+  hotelReviews: defineTable({
+    userId: v.id("users"),
+    hotelId: v.string(), // Changed to string for static IDs
+    rating: v.number(),
+    feedback: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_user_hotel", ["userId", "hotelId"])
+    .index("by_hotel", ["hotelId"]),
+
+  adminSettings: defineTable({
+    key: v.string(),
+    value: v.number(),
+  }).index("by_key", ["key"]),
 });
