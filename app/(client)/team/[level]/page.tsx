@@ -14,7 +14,8 @@ export default function TeamPage({ params }: { params: Promise<{ level: string }
   const searchParams = useSearchParams();
   const statusParam = searchParams.get("status");
   
-  const status = (statusParam === "active" || statusParam === "inactive") ? statusParam : undefined;
+  // Strictly enforce a status. Default to "active" if missing.
+  const status = statusParam === "inactive" ? "inactive" : "active";
 
   const team = useQuery(api.team.getTeam, { level, status });
   const stats = useQuery(api.dashboard.getStats);

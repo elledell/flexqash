@@ -58,6 +58,35 @@ export const getStats = query({
       if (price) expense = price.amount;
     }
 
+    // 5. Calculate Referral Stats & 7-Day Chart Data
+    const downlines = await ctx.db
+      .query("users")
+      .withIndex("by_invitedBy", (q) => q.eq("invitedBy", userId))
+      .collect();
+
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date().setHours(0, 0, 0, 0);
+    const startOfWeek = startOfToday - (6 * oneDayMs);
+
+    const allTimeReferrals = downlines.length;
+    const todayReferrals = downlines.filter(u => u._creationTime >= startOfToday).length;
+    const thisWeekReferrals = downlines.filter(u => u._creationTime >= startOfWeek).length;
+
+    const chartData = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = startOfToday - (i * oneDayMs);
+      const dayEnd = dayStart + oneDayMs;
+      
+      const dailyCount = downlines.filter(
+        (u) => u._creationTime >= dayStart && u._creationTime < dayEnd
+      ).length;
+
+      chartData.push({
+        day: new Date(dayStart).toLocaleDateString("en-US", { weekday: "short" }),
+        referrals: dailyCount,
+      });
+    }
+
     return {
       username: user.username ?? user.name ?? "Member",
       currency: user.currency ?? "KES",
@@ -67,6 +96,12 @@ export const getStats = query({
       withdrawn,
       balance,
       expense,
+      referralStats: {
+        allTime: allTimeReferrals,
+        today: todayReferrals,
+        thisWeek: thisWeekReferrals,
+        chartData,
+      }
     };
   },
 });

@@ -4,6 +4,7 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function DashboardPage() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -12,8 +13,10 @@ export default function DashboardPage() {
   const me = useQuery(api.users.me);
   const stats = useQuery(api.dashboard.getStats);
   const membershipStatus = useQuery(api.membership.status);
+  const bonusStats = useQuery(api.bonus.getStatus);
 
   const [copied, setCopied] = useState(false);
+ 
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -110,19 +113,56 @@ export default function DashboardPage() {
 
       {/* Analytics & Referral Section */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Referral Chart Placeholder */}
+        
+        {/* Referral Chart */}
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">REFERRALS — LAST 7 DAYS</h3>
-            <span className="rounded-full bg-[#e0f2f1] px-3 py-1 text-xs font-bold text-[#1abc9c]">👥 0 all time</span>
+            <span className="rounded-full bg-[#e0f2f1] px-3 py-1 text-xs font-bold text-[#1abc9c]">
+              👥 {stats.referralStats?.allTime || 0} all time
+            </span>
           </div>
-          <div className="flex h-48 items-center justify-center border-b border-dashed border-gray-200">
-            <p className="text-sm text-gray-400">Graph data will appear here</p>
+          
+          <div className="flex h-48 w-full items-center justify-center">
+            {stats.referralStats?.chartData && stats.referralStats.chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.referralStats.chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorReferrals" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#1abc9c" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#1abc9c" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    cursor={{ stroke: '#1abc9c', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="referrals" 
+                    stroke="#1abc9c" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorReferrals)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-gray-400">Loading graph data...</p>
+            )}
           </div>
+
           <div className="mt-4 flex gap-3">
-            <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-[#8e2de2]">⚡ Today: 0</span>
-            <span className="rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-pink-600">📅 This week: 0</span>
-            <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600">🏆 See leaderboard</span>
+            <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-[#8e2de2]">
+              ⚡ Today: {stats.referralStats?.today || 0}
+            </span>
+            <span className="rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-pink-600">
+              📅 This week: {stats.referralStats?.thisWeek || 0}
+            </span>
+            <span className="cursor-pointer rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600 hover:bg-orange-100 transition-colors">
+              🏆 See leaderboard
+            </span>
           </div>
         </div>
 
@@ -168,15 +208,20 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Agent Bonus Goal */}
+     {/* Agent Bonus Goal */}
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">AGENT BONUS GOAL</h3>
-          <span className="rounded-full bg-[#e0f2f1] px-3 py-1 text-xs font-bold text-[#1abc9c]">0 / 6</span>
+          <span className="rounded-full bg-[#e0f2f1] px-3 py-1 text-xs font-bold text-[#1abc9c]">
+            {bonusStats ? `${bonusStats.currentProgress} / ${bonusStats.target}` : "0 / 30"}
+          </span>
         </div>
-        <p className="mb-3 text-sm text-gray-600">Invite 6 active users to claim your bonus.</p>
-        <div className="h-2.5 w-full rounded-full bg-gray-100">
-          <div className="h-2.5 rounded-full bg-[#8e2de2]" style={{ width: '0%' }}></div>
+        <p className="mb-3 text-sm text-gray-600">Invite 30 active users to claim your bonus.</p>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div 
+            className="h-2.5 rounded-full bg-[#8e2de2] transition-all duration-1000 ease-out" 
+            style={{ width: `${bonusStats?.progressPercentage || 0}%` }}
+          ></div>
         </div>
       </div>
 

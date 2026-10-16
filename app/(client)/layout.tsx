@@ -6,6 +6,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useEffect, useState, Suspense } from "react";
 import { api } from "../../convex/_generated/api";
+import "flag-icons/css/flag-icons.min.css"; 
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -65,7 +66,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     }`;
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7fb] relative">
+    // Locked the parent to exact screen height and hid body overflow for independent scrolling
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#f4f7fb] relative">
+      
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -83,6 +86,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         {/* Logo Area */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-50 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
+            <img src="/logo.png" alt="FlexQash Logo" className="h-8 w-8 object-contain" />
             <span className="text-xl font-extrabold text-[#112a46]">
               <span className="text-[#1abc9c]">FLEX</span>QASH
             </span>
@@ -108,12 +112,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               <span className="h-2 w-2 shrink-0 rounded-full bg-[#1abc9c]"></span> Verified
             </span>
           </div>
-          <div className="ml-auto text-lg shrink-0">
-            {me?.country === "KE" ? "🇰🇪" : me?.country === "UG" ? "🇺🇬" : "🌍"}
+          <div className="ml-auto text-xl shrink-0 flex items-center">
+            {me?.country ? (
+              <span className={`fi fi-${me.country.toLowerCase()} rounded-sm shadow-sm`} />
+            ) : (
+              <span className="text-sm">🌍</span>
+            )}
           </div>
         </div>
 
-        {/* Admin Portal Gateway - Only visible to Admins */}
+        {/* Admin Portal Gateway */}
         {me?.role === "admin" && (
           <div className="mx-4 mt-4">
             <Link 
@@ -138,17 +146,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             <Link href="/withdraw" className={navItemClass("/withdraw")}>🏦 Withdraw</Link>
             <Link href="/ranks" className={navItemClass("/ranks")}>🏆 Ranks</Link>
             <Link href="/claim-bonus" className={navItemClass("/claim-bonus")}>🎁 Claim Bonus</Link>
+            <Link href="/pay-client" className={navItemClass("/pay-client")}>🤝 Pay for Client</Link>
           </nav>
           
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Network</div>
           <nav className="mb-8 space-y-4">
-            {/* Level 1 Group */}
-            <div className="group flex flex-col">
-              <Link href="/team/1" className={navItemClass("/team/1")}>
+            <div className="flex flex-col">
+              <div className={`${navItemClass("/team/1")} cursor-default`}>
                 <span className="text-lg">👥</span> Level 1 Team
-              </Link>
-              {/* Automatically stays open if we are on the /team/1 page, otherwise hoverable on desktop */}
-              <div className={`ml-12 flex-col space-y-3 mt-3 mb-2 ${pathname.startsWith("/team/1") ? "flex" : "hidden lg:group-hover:flex"}`}>
+              </div>
+              <div className="ml-12 mt-3 mb-2 flex flex-col space-y-3">
                 <Link href="/team/1?status=active" className={subLinkClass("/team/1", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -158,12 +165,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Level 2 Group */}
-            <div className="group flex flex-col">
-              <Link href="/team/2" className={navItemClass("/team/2")}>
+            <div className="flex flex-col">
+              <div className={`${navItemClass("/team/2")} cursor-default`}>
                 <span className="text-lg">👥</span> Level 2 Team
-              </Link>
-              <div className={`ml-12 flex-col space-y-3 mt-3 mb-2 ${pathname.startsWith("/team/2") ? "flex" : "hidden lg:group-hover:flex"}`}>
+              </div>
+              <div className="ml-12 mt-3 mb-2 flex flex-col space-y-3">
                 <Link href="/team/2?status=active" className={subLinkClass("/team/2", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -173,12 +179,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Level 3 Group */}
-            <div className="group flex flex-col">
-              <Link href="/team/3" className={navItemClass("/team/3")}>
+            <div className="flex flex-col">
+              <div className={`${navItemClass("/team/3")} cursor-default`}>
                 <span className="text-lg">👥</span> Level 3 Team
-              </Link>
-              <div className={`ml-12 flex-col space-y-3 mt-3 mb-2 ${pathname.startsWith("/team/3") ? "flex" : "hidden lg:group-hover:flex"}`}>
+              </div>
+              <div className="ml-12 mt-3 mb-2 flex flex-col space-y-3">
                 <Link href="/team/3?status=active" className={subLinkClass("/team/3", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -188,7 +193,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </nav>
-<div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Best Features</div>
+
+          <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Best Features</div>
           <nav className="space-y-1 mb-6">
             <Link href="/products/investments" className={navItemClass("/products/investments")}>
               📈 Investments <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
@@ -212,48 +218,34 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Products</div>
           <nav className="space-y-1 mb-8">
-            <Link href="/products/youtube" className={navItemClass("/products/youtube")}>
-              ▶️ YouTube Videos
-            </Link>
-            <Link href="/products/tiktok" className={navItemClass("/products/tiktok")}>
-              🎵 TikTok Videos
-            </Link>
-            <Link href="/products/surveys" className={navItemClass("/products/surveys")}>
-              📋 Surveys
-            </Link>
-            <Link href="/products/reels" className={navItemClass("/products/reels")}>
-              🎬 Reels
-            </Link>
-            <Link href="/products/movies" className={navItemClass("/products/movies")}>
-              🍿 Movies
-            </Link>
-            <Link href="/products/articles" className={navItemClass("/products/articles")}>
-              ✍️ Article Writing
-            </Link>
+            <Link href="/products/youtube" className={navItemClass("/products/youtube")}>▶️ YouTube Videos</Link>
+            <Link href="/products/tiktok" className={navItemClass("/products/tiktok")}>🎵 TikTok Videos</Link>
+            <Link href="/products/surveys" className={navItemClass("/products/surveys")}>📋 Surveys</Link>
+            <Link href="/products/reels" className={navItemClass("/products/reels")}>🎬 Reels</Link>
+            <Link href="/products/movies" className={navItemClass("/products/movies")}>🍿 Movies</Link>
+            <Link href="/products/articles" className={navItemClass("/products/articles")}>✍️ Article Writing</Link>
             <Link href="/products/spin" className={navItemClass("/products/spin")}>
               🎡 Spin &amp; Win <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
             </Link>
-            <Link href="/products/ads" className={navItemClass("/products/ads")}>
-              🖱️ Click Ads
-            </Link>
+            <Link href="/products/ads" className={navItemClass("/products/ads")}>🖱️ Click Ads</Link>
           </nav>
-        </div>
 
-        {/* Footer Actions */}
-        <div className="border-t border-gray-50 p-4 space-y-2">
-          <Link href="/profile" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">👤 Profile</Link>
-          <Link href="/contact" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">🎧 Contact Us</Link>
-          <button
-            onClick={() => signOut().then(() => router.push("/"))}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
-          >
-            Log Out
-          </button>
+          {/* Footer Actions */}
+          <div className="mt-8 border-t border-gray-100 pt-6 space-y-2">
+            <Link href="/profile" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">👤 Profile</Link>
+            <Link href="/contact" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">🎧 Contact Us</Link>
+            <button
+              onClick={() => signOut().then(() => router.push("/"))}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col h-[100dvh]">
         {/* Top Header */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white/50 px-4 md:px-6 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -267,6 +259,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm hover:text-[#1abc9c]">🌙</button>
             <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm hover:text-[#1abc9c]">⚙️</button>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg shadow-sm cursor-default overflow-hidden">
+              {me?.country ? (
+                <span className={`fi fi-${me.country.toLowerCase()} text-xl rounded-sm`} />
+              ) : (
+                <span className="text-sm">🌍</span>
+              )}
+            </div>
           </div>
         </header>
 
@@ -279,7 +278,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Wrap in Suspense to safely use useSearchParams in Next.js App Router
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#f4f7fb]">Loading...</div>}>
