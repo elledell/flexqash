@@ -1,5 +1,6 @@
 import { v, ConvexError } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api"; // ✅ Correct import
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { calculateWithdrawalFee } from "./financials";
 import { requireAdmin } from "./access";
@@ -125,15 +126,17 @@ export const getUserWithdrawals = query({
       .order("desc")
       .take(25);
   },
-});export const listAllWithdrawals = query({
+});
+
+export const listAllWithdrawals = query({
   args: {
     status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
-    countryCode: v.optional(v.string()), // Added the new country filter
+    countryCode: v.optional(v.string()), 
   },
   handler: async (ctx, { status, countryCode }) => {
     await requireAdmin(ctx);
 
-    const rows = await ctx.db.query("withdrawals").order("desc").take(500); // Fetch a larger batch for filtering
+    const rows = await ctx.db.query("withdrawals").order("desc").take(500); 
     const filteredByStatus = status ? rows.filter((r) => r.status === status) : rows;
 
     const list = [];
@@ -141,7 +144,6 @@ export const getUserWithdrawals = query({
       const u = await ctx.db.get(w.userId);
       const userCountry = u?.country || "KE";
       
-      // If a specific country is selected, skip users who don't match
       if (countryCode && countryCode !== "ALL" && userCountry !== countryCode) {
         continue;
       }
@@ -189,6 +191,19 @@ export const updateWithdrawalStatus = mutation({
       status,
       processedAt: Date.now(),
     });
+
+    // 📩 FIRE THE WITHDRAWAL EMAIL
+    if (status === "approved") {
+      const user = await ctx.db.get(w.userId);
+      if (user?.email) {
+        await ctx.scheduler.runAfter(0, internal.emails.sendWithdrawalApprovalEmail, {
+          email: user.email,
+          name: user.name || user.username || "Member",
+          amount: w.amount,
+          currency: w.currency,
+        });
+      }
+    }
 
     return { success: true };
   },

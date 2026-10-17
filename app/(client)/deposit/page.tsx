@@ -15,6 +15,10 @@ export default function DepositPage() {
   const [amount, setAmount] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  
+  // NEW STATE: Tracks when a user clicks the Selar link
+  const [clickedSelarId, setClickedSelarId] = useState<string | null>(null);
+
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,6 +61,32 @@ export default function DepositPage() {
     setLoading(false);
   };
 
+  // Dedicated submit handler for Selar 
+  const handleSelarSubmit = async () => {
+    if (!amount || Number(amount) <= 0) return setError("Please enter the amount you deposited.");
+    if (!transactionId) return setError("Please paste the confirmation message to verify.");
+    
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      await submitManual({
+        methodTitle: "Selar Deposit",
+        phone: phone || "N/A", // Phone is required by backend, fallback if empty
+        amount: Number(amount),
+        transactionId: transactionId,
+      });
+      setPhone("");
+      setAmount("");
+      setTransactionId("");
+      setClickedSelarId(null);
+      setSuccess("Deposit request submitted! Awaiting admin approval.");
+    } catch (e) {
+      setError(e instanceof ConvexError ? String(e.data) : "Failed to submit deposit request.");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#f4f7fb] p-4 sm:p-6 lg:p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -71,100 +101,177 @@ export default function DepositPage() {
           {selectedMethod ? selectedMethod.title : "Fund Your Wallet"}
         </h3>
 
-        {/* Payment Method Selector */}
-        {!selectedMethod && instructions.type === "manual" ? (
-          <div className="flex flex-col gap-3 mb-8">
-            {instructions.methods.map((method) => (
-              <button
-                key={method.id}
-                onClick={() => setSelectedMethod(method)}
-                className="w-full sm:w-1/2 rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
-              >
-                {method.buttonLabel}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-5">
-            {instructions.type === "manual" && (
-              <button
-                onClick={() => setSelectedMethod(null)}
-                className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline mb-4 inline-block"
-              >
-                ← Change payment method
-              </button>
-            )}
+        {/* MANUAL PAYMENT METHODS */}
+        {instructions.type === "manual" && (
+          <>
+            {!selectedMethod ? (
+              <div className="flex flex-col gap-3 mb-8">
+                {instructions.methods.map((method) => (
+                  <button
+                    key={method.id}
+                    onClick={() => setSelectedMethod(method)}
+                    className="w-full sm:w-1/2 rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
+                  >
+                    {method.buttonLabel}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <button
+                  onClick={() => setSelectedMethod(null)}
+                  className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline mb-4 inline-block"
+                >
+                  ← Change payment method
+                </button>
 
-            {/* Payment Instructions Box */}
-            {selectedMethod && (
-              <div className="rounded-lg bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20 mb-6">
-                <ol className="space-y-2 text-sm font-medium text-[#112a46]">
-                  {selectedMethod.steps.map((step, idx) => (
-                    <li key={idx} className="flex items-center gap-2 leading-relaxed">
-                      <span>{step}</span>
-                      {selectedMethod.copyableCode && step.includes(selectedMethod.copyableCode) && (
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(selectedMethod.copyableCode!)}
-                          className="ml-2 rounded border border-gray-300 bg-white px-2 py-1 text-[10px] font-bold text-gray-700 hover:bg-gray-100 uppercase"
-                        >
-                          {copied ? "Copied" : "Copy"}
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ol>
+                <div className="rounded-lg bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20 mb-6">
+                  <ol className="space-y-2 text-sm font-medium text-[#112a46]">
+                    {selectedMethod.steps.map((step, idx) => (
+                      <li key={idx} className="flex items-center gap-2 leading-relaxed">
+                        <span>{step}</span>
+                        {selectedMethod.copyableCode && step.includes(selectedMethod.copyableCode) && (
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(selectedMethod.copyableCode!)}
+                            className="ml-2 rounded border border-gray-300 bg-white px-2 py-1 text-[10px] font-bold text-gray-700 hover:bg-gray-100 uppercase"
+                          >
+                            {copied ? "Copied" : "Copy"}
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-600 mb-1">Enter Mobile</label>
+                    <input
+                      type="text"
+                      className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
+                      placeholder="254142032284"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-600 mb-1">Enter Amount ({status.currency})</label>
+                    <input
+                      type="number"
+                      className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
+                      placeholder="Enter Amount"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-600 mb-1">Transaction ID</label>
+                    <input
+                      type="text"
+                      className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
+                      placeholder="Paste receipt or ID here"
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {error && <p className="text-sm font-bold text-red-600">{error}</p>}
+                {success && <p className="text-sm font-bold text-[#1abc9c]">{success}</p>}
+
+                <button
+                  onClick={handleManualSubmit}
+                  disabled={loading}
+                  className="mt-4 rounded-lg bg-[#1abc9c] px-8 py-3 font-bold text-white shadow-md transition hover:bg-[#16a085] disabled:opacity-50"
+                >
+                  {loading ? "Submitting..." : "Submit"}
+                </button>
               </div>
             )}
+          </>
+        )}
 
-            {/* Deposit Form */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">Enter Mobile</label>
-                <input
-                  type="text"
-                  className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
-                  placeholder="254142032284"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+        {/* SELAR PAYMENT METHODS */}
+        {instructions.type === "selar" && (
+          <div className="mt-4">
+            {!clickedSelarId ? (
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Click the button below to add funds via Selar. After completing the payment, return here to submit your receipt.
+                </p>
+                {instructions.methods.map((method) => (
+                  <a
+                    key={method.id}
+                    href={method.selarUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setClickedSelarId(method.id)}
+                    className="block w-full sm:w-2/3 rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
+                  >
+                    {method.buttonLabel}
+                  </a>
+                ))}
               </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">Enter Amount ({status.currency})</label>
-                <input
-                  type="number"
-                  className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
-                  placeholder="Enter Amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-
-              {selectedMethod && (
+            ) : (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="rounded-lg bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20 mb-4 text-sm text-[#112a46] sm:w-2/3">
+                  <strong>Step 2:</strong> Paste your Selar confirmation message or email receipt below to verify your deposit.
+                </div>
+                
                 <div>
-                  <label className="block text-sm font-bold text-gray-600 mb-1">Transaction ID</label>
+                  <label className="block text-sm font-bold text-gray-600 mb-1">Amount Deposited ({status.currency})</label>
                   <input
-                    type="text"
+                    type="number"
                     className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
-                    placeholder="Paste receipt or ID here"
+                    placeholder="Enter Amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-600 mb-1">Phone Number (Optional)</label>
+                  <input
+                    className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c]"
+                    placeholder="e.g. 07XXXXXXXX"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-600 mb-1">Selar Confirmation Message</label>
+                  <textarea
+                    className="w-full sm:w-2/3 rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1abc9c] h-24 resize-none"
+                    placeholder="Paste the SMS or Email receipt text here..."
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
                   />
                 </div>
-              )}
-            </div>
-
-            {error && <p className="text-sm font-bold text-red-600">{error}</p>}
-            {success && <p className="text-sm font-bold text-[#1abc9c]">{success}</p>}
-
-            <button
-              onClick={handleManualSubmit}
-              disabled={loading}
-              className="mt-4 rounded-lg bg-[#1abc9c] px-8 py-3 font-bold text-white shadow-md transition hover:bg-[#16a085] disabled:opacity-50"
-            >
-              {loading ? "Submitting..." : "Submit"}
-            </button>
+                
+                {error && <p className="text-sm font-bold text-red-600">{error}</p>}
+                {success && <p className="text-sm font-bold text-[#1abc9c]">{success}</p>}
+                
+                <div className="flex flex-col gap-3 sm:w-2/3">
+                  <button
+                    onClick={handleSelarSubmit}
+                    disabled={loading || !transactionId || !amount}
+                    className="rounded-lg bg-[#1abc9c] px-8 py-3 font-bold text-white shadow-md transition hover:bg-[#16a085] disabled:opacity-50"
+                  >
+                    {loading ? "Submitting..." : "Submit Deposit Request"}
+                  </button>
+                  <button
+                    onClick={() => setClickedSelarId(null)}
+                    className="text-sm font-semibold text-gray-500 hover:text-gray-700 underline text-left"
+                  >
+                    Back to payment link
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { PAYMENT_INSTRUCTIONS, PaymentMethod } from "../../convex/paymentInstructions";
-import { inputClass } from "../components/ui"; // Assuming this is defined
+import { inputClass } from "../components/ui"; 
 
 export default function MembershipPage() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -18,17 +18,19 @@ export default function MembershipPage() {
   const transactions = useQuery(api.membership.getUserTransactions);
 
   const startMpesa = useAction(api.payments.mpesa.start);
-  const checkMpesa = useAction(api.payments.mpesa.check);
   const submitManual = useMutation(api.membership.submitManualPayment);
 
   const [phone, setPhone] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  
+  // NEW STATE: Tracks when a user clicks the Selar link
+  const [clickedSelarId, setClickedSelarId] = useState<string | null>(null);
+  
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Dashboard Lock: Only active users get in.
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/sign-in");
     if (status?.active) router.replace("/dashboard");
@@ -39,7 +41,6 @@ export default function MembershipPage() {
   const countryCode = status.provider === "mpesa" ? "KE" : (status as any).country ?? "UG";
   const instructions = PAYMENT_INSTRUCTIONS[countryCode] ?? { type: "coming_soon", methods: [] };
 
-  // Check if the user is currently waiting for admin approval
   const isPendingApproval = transactions.some((tx) => tx.status === "pending" && tx.provider === "manual");
 
   const copyToClipboard = (text: string) => {
@@ -59,7 +60,7 @@ export default function MembershipPage() {
       await submitManual({
         methodTitle: selectedMethod?.title ?? "Manual Mobile Money",
         phone,
-        transactionId: transactionId || undefined, // Send if they typed it, otherwise undefined
+        transactionId: transactionId || undefined,
       });
       setPhone("");
       setTransactionId("");
@@ -69,10 +70,32 @@ export default function MembershipPage() {
     setLoading(false);
   };
 
+  // Dedicated submit handler for Selar 
+  const handleSelarSubmit = async () => {
+    if (!transactionId) {
+      setError("Please paste the confirmation message to request activation.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      await submitManual({
+        methodTitle: "Selar Payment",
+        phone: phone || "N/A", // Optional for Selar, but required by DB
+        transactionId: transactionId,
+      });
+      setPhone("");
+      setTransactionId("");
+      setClickedSelarId(null);
+    } catch (e) {
+      setError(e instanceof ConvexError ? String(e.data) : "Failed to submit activation request.");
+    }
+    setLoading(false);
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#f4f7fb] px-4 py-12">
       <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm sm:p-8 border border-gray-100">
-        {/* Brand Header */}
         <div className="text-center">
           <h1 className="text-2xl font-extrabold text-[#112a46]">Welcome!</h1>
           <p className="mt-1 text-lg font-bold text-[#1abc9c]">Activate your account</p>
@@ -122,7 +145,7 @@ export default function MembershipPage() {
               </div>
             )}
 
-            {/* 2. MANUAL COUNTRIES (UG, MW, TZ, ZM, SS, BW) */}
+            {/* 2. MANUAL COUNTRIES */}
             {instructions.type === "manual" && (
               <div className="mt-8 border-t border-gray-100 pt-6">
                 {!selectedMethod ? (
@@ -148,7 +171,6 @@ export default function MembershipPage() {
 
                     <h3 className="font-bold text-[#1abc9c]">{selectedMethod.title}</h3>
 
-                    {/* Steps */}
                     <div className="rounded-lg bg-gray-50 p-4">
                       <ol className="space-y-2 text-sm font-medium text-[#112a46]">
                         {selectedMethod.steps.map((step, idx) => (
@@ -181,7 +203,6 @@ export default function MembershipPage() {
                         />
                       </div>
                       
-                      {/* Optional Transaction ID / Message Area */}
                       <div>
                         <label className="block text-sm font-semibold text-[#112a46]">
                           Transaction Message (Optional):
@@ -222,26 +243,75 @@ export default function MembershipPage() {
               </div>
             )}
 
-            {/* 3. SELAR & COMING SOON */}
+            {/* 3. SELAR WITH MESSAGE INPUT */}
             {instructions.type === "selar" && (
-              <div className="mt-8 border-t border-gray-100 pt-6 text-center space-y-4">
-                <p className="text-sm text-gray-600">
-                  Click the button below to complete your activation safely via our verified payment gateway.
-                </p>
-                {instructions.methods.map((method) => (
-                  <a
-                    key={method.id}
-                    href={method.selarUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
-                  >
-                    {method.buttonLabel}
-                  </a>
-                ))}
+              <div className="mt-8 border-t border-gray-100 pt-6">
+                {!clickedSelarId ? (
+                  <div className="space-y-4 text-center">
+                    <p className="text-sm text-gray-600">
+                      Click the button below to pay via Selar. After paying, return to this page to submit your receipt message.
+                    </p>
+                    {instructions.methods.map((method) => (
+                      <a
+                        key={method.id}
+                        href={method.selarUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => setClickedSelarId(method.id)}
+                        className="block w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
+                      >
+                        {method.buttonLabel}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4 animate-in fade-in duration-300">
+                    <div className="rounded-lg bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20 mb-4 text-sm text-[#112a46]">
+                      <strong>Step 2:</strong> Paste your Selar confirmation message or email receipt below to request activation.
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-[#112a46]">Phone Number (Optional)</label>
+                      <input
+                        className={`${inputClass} mt-1 w-full rounded-lg border-gray-300 px-4 py-3`}
+                        placeholder="e.g. 07XXXXXXXX"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-[#112a46]">Selar Confirmation Message</label>
+                      <textarea
+                        className={`${inputClass} mt-1 w-full rounded-lg border-gray-300 px-4 py-3 h-24 resize-none`}
+                        placeholder="Paste the SMS or Email receipt text here..."
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                      />
+                    </div>
+                    
+                    {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+                    
+                    <button
+                      onClick={handleSelarSubmit}
+                      disabled={loading || !transactionId}
+                      className="w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085] disabled:opacity-50"
+                    >
+                      {loading ? "Submitting Request..." : "Submit Activation Request"}
+                    </button>
+                    
+                    <button
+                      onClick={() => setClickedSelarId(null)}
+                      className="mt-2 block w-full text-center text-sm font-semibold text-gray-500 hover:text-gray-700 underline"
+                    >
+                      Back to payment link
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* COMING SOON */}
             {instructions.type === "coming_soon" && (
               <p className="mt-6 rounded-md bg-amber-50 p-4 text-center text-sm font-medium text-amber-700">
                 Automated payments for your region are coming soon. Contact customer care for manual activation.
@@ -299,7 +369,6 @@ export default function MembershipPage() {
           </div>
         </div>
 
-        {/* Sign Out */}
         <div className="mt-8 text-center">
           <button
             onClick={() => signOut().then(() => router.push("/"))}

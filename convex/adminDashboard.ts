@@ -37,11 +37,38 @@ export const getOverview = query({
          };
       });
 
+    // ----------------------------------------------------
+    // DYNAMIC GRAPH DATA: Calculate stats for the last 7 days
+    // ----------------------------------------------------
+    const now = new Date();
+    const chartData = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      // Get the start and end of the target day
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const startOfDay = d.getTime();
+      const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+      
+      // Get the short weekday label (e.g., "Mon", "Tue")
+      const label = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+      // Count users created on this day
+      const dailyUsers = filteredUsers.filter(u => u._creationTime >= startOfDay && u._creationTime <= endOfDay).length;
+      
+      // Sum deposits made on this day
+      const dailyDeposits = filteredPayments
+        .filter(p => p._creationTime >= startOfDay && p._creationTime <= endOfDay)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      chartData.push({ name: label, users: dailyUsers, deposits: dailyDeposits });
+    }
+
     return {
       totalUsers: filteredUsers.length,
       totalDeposits,
       transactionCount: filteredPayments.length,
-      recentActivity: activity
+      recentActivity: activity,
+      chartData // Send the graph data to the frontend
     };
   },
 });

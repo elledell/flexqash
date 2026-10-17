@@ -1,8 +1,9 @@
 import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api"; // ✅ Correct import
 import { requireAdmin } from "./access";
 import { COUNTRIES } from "./countries";
-import { distributeCommissions } from "./affiliate"; // <-- Adjust filename if yours is named differently
+import { distributeCommissions } from "./affiliate"; 
 
 const METHOD_LABEL: Record<string, string> = {
   mpesa: "M-Pesa (Kenya)",
@@ -99,8 +100,17 @@ export const approvePayment = mutation({
         membershipPaidAt: Date.now(),
       });
 
-      // Distribute Level 1, 2, and 3 Referral Commissions!
+      // Distribute Level 1, 2, and 3 Referral Commissions
       await distributeCommissions(ctx, payment.userId);
+
+      // 📩 FIRE THE ACTIVATION EMAIL
+      const user = await ctx.db.get(payment.userId);
+      if (user?.email) {
+        await ctx.scheduler.runAfter(0, internal.emails.sendActivationEmail, {
+          email: user.email,
+          name: user.name || user.username || "Member",
+        });
+      }
     }
 
     return { success: true };
@@ -124,7 +134,7 @@ export const rejectPayment = mutation({
   },
 });
 
-// ONE-CLICK SYNC: Retroactively pays out any active referrals that missed their commission (like test2 -> test1)
+// ONE-CLICK SYNC
 export const syncMissingCommissions = mutation({
   args: {},
   handler: async (ctx) => {

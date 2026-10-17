@@ -1,6 +1,7 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { v, ConvexError } from "convex/values";
+import { query, mutation } from "./_generated/server";
 import { requireAdmin } from "./access";
+import { distributeCommissions } from "./affiliate";
 
 export const listUsers = query({
   args: {
@@ -51,6 +52,7 @@ export const listUsers = query({
         totalEarned,
         joined: u._creationTime,
         status: u.membership === "active" ? "Activated" : "Pending",
+        isBanned: !!u.isBanned, // Passes the ban status to the frontend UI
       };
     }));
 
@@ -65,6 +67,7 @@ export const listUsers = query({
     };
   }
 });
+
 export const getUserNetwork = query({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
@@ -106,4 +109,71 @@ export const getUserNetwork = query({
       activeReferred: downline.filter((d) => d.status === "active").length,
     };
   },
+});
+
+// Toggle a user's membership (Activate / Deactivate) without paying commissions
+export const toggleActivation = mutation({
+  args: { 
+    userId: v.id("users"), 
+    status: v.union(v.literal("active"), v.literal("none")) 
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx); // Ensure only admins can do this
+    await ctx.db.patch(args.userId, { 
+      membership: args.status,
+      // If we are activating them, record the timestamp
+      ...(args.status === "active" ? { membershipPaidAt: Date.now() } : {})
+    });
+    return { success: true };
+  }
+});
+
+// Toggle a user's ban status (Ban / Unban)
+export const toggleBan = mutation({
+  args: { 
+    userId: v.id("users"), 
+    isBanned: v.boolean() 
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    await ctx.db.patch(args.userId, { isBanned: args.isBanned });
+    return { success: true };
+  }
+});
+
+// Full Manual Approval (Activates, Clears Requests, and Pays Uplines)
+export const approveUserManually = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new ConvexError("User not found");
+    if (user.membership === "active") throw new ConvexError("User is already activated.");
+
+    // 1. Activate the user
+    await ctx.db.patch(args.userId, { 
+      membership: "active",
+      membershipPaidAt: Date.now() 
+    });
+
+    // 2. Find any pending manual payment requests and mark them as paid
+    const pendingPayments = await ctx.db
+      .query("payments")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+
+    for (const payment of pendingPayments) {
+      await ctx.db.patch(payment._id, { 
+        status: "paid", 
+        resultDesc: "Manually approved by Admin via Users table" 
+      });
+    }
+
+    // 3. Fire the commission engine to pay Level 1, 2, and 3
+    await distributeCommissions(ctx, args.userId);
+
+    return { success: true };
+  }
 });

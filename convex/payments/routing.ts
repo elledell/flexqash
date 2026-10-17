@@ -1,6 +1,17 @@
-export type Provider = "mpesa" | "paystack";
+export type Provider = "mpesa" | "manual" | "selar" | "paystack";
 
-// Add a line per country as each provider is built
+// Map every country code to its designated payment processing flow
 export const PROVIDER_BY_COUNTRY: Record<string, Provider> = {
-  KE: "mpesa",
+  KE: "mpesa",      // Kenya uses automated STK push
+  UG: "manual",     // Uganda manual mobile money
+  MW: "manual",     // Malawi manual mobile money
+  TZ: "manual",     // Tanzania manual mobile money
+  ZM: "manual",     // Zambia manual mobile money
+  SS: "manual",     // South Sudan manual mobile money
+  BW: "manual",     // Botswana manual mobile money
+  INT: "manual",    // International (Binance) uses manual verification
+  GH: "selar",      // Ghana uses Selar link
+  NG: "selar",      // Nigeria uses Selar link
+  CM: "manual",     // Cameroon (Coming soon - fallback to manual)
+  RW: "manual",     // Rwanda (Coming soon - fallback to manual)
 };

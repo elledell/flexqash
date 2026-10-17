@@ -12,4 +12,5 @@ export const COUNTRIES = [
   { code: "RW", name: "Rwanda", dial: "250", currency: "RWF" },
   { code: "CD", name: "DR Congo", dial: "243", currency: "CDF" },
   { code: "SS", name: "South Sudan", dial: "211", currency: "SSP" },
+  { code: "INT", name: "International", dial: "", currency: "USD" },
 ] as const;

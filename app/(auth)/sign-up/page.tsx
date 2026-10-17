@@ -26,7 +26,8 @@ function SignUpForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const country = COUNTRIES.find((c) => c.code === countryCode)!;
+  // Fallback to the first country if INT or something else is missing
+  const country = COUNTRIES.find((c) => c.code === countryCode) || COUNTRIES[0];
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,8 +36,12 @@ function SignUpForm() {
 
     const username = String(form.get("username") ?? "").trim().toLowerCase();
     const email = String(form.get("email") ?? "").trim().toLowerCase();
+    
+    // Clean up the phone number input
     const digits = String(form.get("mobile") ?? "").replace(/\D/g, "").replace(/^0+/, "");
-    const phone = `+${country.dial}${digits}`;
+    
+    // Dynamically format the phone based on whether they chose International
+    const phone = countryCode === "INT" ? `+${digits}` : `+${country.dial}${digits}`;
 
     if (username.length < 3) {
       setError("Username must be at least 3 characters.");
@@ -67,6 +72,11 @@ function SignUpForm() {
       form.set("email", email);
       form.set("country", countryCode);
       form.set("flow", "signUp");
+      
+      // Inject the hidden referral code into the backend payload if it exists
+      if (defaultReferral) {
+        form.set("invitedByCode", defaultReferral);
+      }
 
       await signIn("password", form);
       router.push("/dashboard");
@@ -84,6 +94,21 @@ function SignUpForm() {
     <>
       <h1 className="text-center text-xl font-extrabold text-brand-900">Sign Up</h1>
       <p className="mb-6 mt-1 text-center text-sm text-brand-400">Create your free account</p>
+
+      {/* Modern Referral Banner (Only visible if a valid ref link is used) */}
+      {defaultReferral && (
+        <div className="mb-6 flex items-center gap-4 rounded-2xl bg-[#eefaf6] px-5 py-4 border border-[#d2f4ea]">
+          <div className="flex shrink-0 items-center justify-center text-[#16a085]">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <p className="text-sm text-brand-900 leading-tight">
+            You're joining through <br/>
+            <strong className="text-base font-extrabold">{defaultReferral}</strong>.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
@@ -109,21 +134,32 @@ function SignUpForm() {
 
         <div>
           <label className={labelClass} htmlFor="mobile">Mobile</label>
-          <div className="flex">
-            <span className="flex shrink-0 items-center gap-2 rounded-l-lg border border-r-0 border-brand-100 bg-brand-50 px-3 text-sm font-semibold text-brand-900">
-              <span className={`fi fi-${country.code.toLowerCase()} rounded-sm`} />
-              +{country.dial}
-            </span>
+          {countryCode === "INT" ? (
             <input
               id="mobile"
               name="mobile"
               type="tel"
-              inputMode="numeric"
               required
-              placeholder="712345678"
-              className={`${inputClass} rounded-l-none`}
+              placeholder="e.g. +1 234 567 8900 (Include country code)"
+              className={inputClass}
             />
-          </div>
+          ) : (
+            <div className="flex">
+              <span className="flex shrink-0 items-center gap-2 rounded-l-lg border border-r-0 border-brand-100 bg-brand-50 px-3 text-sm font-semibold text-brand-900">
+                <span className={`fi fi-${country.code.toLowerCase()} rounded-sm`} />
+                +{country.dial}
+              </span>
+              <input
+                id="mobile"
+                name="mobile"
+                type="tel"
+                inputMode="numeric"
+                required
+                placeholder="712345678"
+                className={`${inputClass} rounded-l-none`}
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -141,31 +177,7 @@ function SignUpForm() {
           <PasswordInput id="confirmPassword" name="confirmPassword" placeholder="Confirm password" autoComplete="new-password" />
         </div>
 
-       {/* Referral Code Field */}
-        <div>
-          <label className={labelClass} htmlFor="invitedByCode">
-            Referral Code {defaultReferral ? "(Applied)" : "(Optional)"}
-          </label>
-          <input 
-            id="invitedByCode" 
-            name="invitedByCode" 
-            type="text" 
-            defaultValue={defaultReferral} 
-            readOnly={!!defaultReferral}
-            placeholder="Enter invite code if you have one" 
-            className={`${inputClass} ${
-              defaultReferral ? "bg-gray-100 text-gray-500 cursor-not-allowed font-semibold" : ""
-            }`} 
-          />
-          <p className="mt-1 text-xs text-brand-400">
-            {defaultReferral 
-              ? `You were invited by ${defaultReferral}. This code is locked.` 
-              : "Leave blank if you were not invited."}
-          </p>
-        </div>
-      
-
-        <label className="flex items-start gap-2 text-sm text-brand-500">
+        <label className="flex items-start gap-2 text-sm text-brand-500 pt-2">
           <input type="checkbox" required className="mt-1 h-4 w-4 accent-brand-500" />
           <span>
             I agree to the{" "}
@@ -174,7 +186,7 @@ function SignUpForm() {
           </span>
         </label>
 
-        {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
 
         <button type="submit" disabled={loading} className={primaryButton}>
           {loading ? "Creating account..." : "Create Account"}
@@ -189,10 +201,9 @@ function SignUpForm() {
   );
 }
 
-// Wrap the form in a Suspense boundary to support Next.js useSearchParams
 export default function SignUpPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-brand-500">Loading form...</div>}>
+    <Suspense fallback={<div className="p-8 text-center font-semibold text-brand-500">Loading form...</div>}>
       <SignUpForm />
     </Suspense>
   );

@@ -22,6 +22,7 @@ import type * as countries from "../countries.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as deposit from "../deposit.js";
+import type * as emails from "../emails.js";
 import type * as financials from "../financials.js";
 import type * as gigs from "../gigs.js";
 import type * as hotels from "../hotels.js";
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   dashboard: typeof dashboard;
   deposit: typeof deposit;
+  emails: typeof emails;
   financials: typeof financials;
   gigs: typeof gigs;
   hotels: typeof hotels;

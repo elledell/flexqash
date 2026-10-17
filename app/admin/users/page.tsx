@@ -1,18 +1,53 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { useState, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
+import { ConvexError } from "convex/values";
 import "flag-icons/css/flag-icons.min.css";
 
 export default function UsersManagementPage() {
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   
   const data = useQuery(api.adminUsers.listUsers, { searchTerm: search });
+  
+  // Mutations
+  const toggleActivation = useMutation(api.adminUsers.toggleActivation);
+  const toggleBan = useMutation(api.adminUsers.toggleBan);
+  const approveUserManually = useMutation(api.adminUsers.approveUserManually);
+
+  // Close dropdown when clicking anywhere else on the screen
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdownId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  const handleAction = async (action: string, userId: string) => {
+    setOpenDropdownId(null); // close dropdown immediately
+    try {
+      if (action === "activate") {
+        await approveUserManually({ userId: userId as any });
+      }
+      if (action === "deactivate") {
+        await toggleActivation({ userId: userId as any, status: "none" });
+      }
+      if (action === "ban") {
+        await toggleBan({ userId: userId as any, isBanned: true });
+      }
+      if (action === "unban") {
+        await toggleBan({ userId: userId as any, isBanned: false });
+      }
+    } catch (error) {
+      console.error("Action failed:", error);
+      alert(error instanceof ConvexError ? error.data : "Failed to perform action. Ensure you have admin permissions.");
+    }
+  };
 
   if (data === undefined) {
-    return <div className="font-bold text-[#112a46]">Loading Users...</div>;
+    return <div className="font-bold text-[#112a46] p-8">Loading Users...</div>;
   }
 
   return (
@@ -66,16 +101,10 @@ export default function UsersManagementPage() {
               className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:border-[#1abc9c] focus:bg-white transition-colors"
             />
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-500">Test Only</span>
-            <div className="h-6 w-11 rounded-full bg-gray-200 border border-gray-300 relative cursor-not-allowed opacity-70">
-              <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm"></div>
-            </div>
-          </div>
         </div>
 
         {/* Data Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[300px] pb-32">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-[#f8fcfb] text-[#112a46]">
               <tr>
@@ -85,20 +114,24 @@ export default function UsersManagementPage() {
                 <th className="px-6 py-4 font-bold">Joined</th>
                 <th className="px-6 py-4 font-bold">Status</th>
                 <th className="px-6 py-4 font-bold text-center">Network</th>
+                <th className="px-6 py-4 font-bold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {data.items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                     No users match your search.
                   </td>
                 </tr>
               ) : (
-                data.items.map((user) => (
+                data.items.map((user: any) => (
                   <tr key={user._id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-700">
                       {user.email}
+                      {user.isBanned && (
+                        <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 uppercase">Banned</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-bold text-gray-500">
@@ -106,7 +139,7 @@ export default function UsersManagementPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-extrabold text-[#112a46]">
-                      {user.currency} {user.totalEarned.toLocaleString()}
+                      {user.currency} {user.totalEarned?.toLocaleString() || 0}
                     </td>
                     <td className="px-6 py-4 text-gray-500">
                       {new Date(user.joined).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -124,11 +157,59 @@ export default function UsersManagementPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button 
-                        onClick={() => setSelectedUserId(user._id)}
-                        className="text-gray-400 hover:text-[#112a46] font-bold tracking-widest px-2"
+                        onClick={(e) => { e.stopPropagation(); setSelectedUserId(user._id); }}
+                        className="rounded bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200 transition"
                       >
-                        •••
+                        View Tree
                       </button>
+                    </td>
+                    <td className="px-6 py-4 text-right relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+                          setOpenDropdownId(openDropdownId === user._id ? null : user._id);
+                        }}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold shadow-sm transition ${
+                          openDropdownId === user._id 
+                            ? "bg-[#112a46] text-white border-[#112a46]" 
+                            : "bg-white text-[#112a46] border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        Manage ▾
+                      </button>
+
+                      {/* Floating Actions Dropdown */}
+                      {openDropdownId === user._id && (
+                        <div 
+                          className="absolute right-6 top-12 z-[100] w-48 rounded-xl border border-gray-100 bg-white p-2 shadow-2xl"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.nativeEvent.stopImmediatePropagation();
+                          }}
+                        >
+                          {user.status !== "Activated" && (
+                            <button onClick={() => handleAction("activate", user._id)} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-[#1abc9c] hover:bg-emerald-50 transition">
+                              ✅ Approve / Activate
+                            </button>
+                          )}
+                          {user.status === "Activated" && (
+                            <button onClick={() => handleAction("deactivate", user._id)} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-orange-600 hover:bg-orange-50 transition">
+                              ⏸️ Deactivate User
+                            </button>
+                          )}
+                          <div className="my-1 border-t border-gray-100"></div>
+                          {user.isBanned ? (
+                            <button onClick={() => handleAction("unban", user._id)} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-[#3498db] hover:bg-blue-50 transition">
+                              🔓 Unban Account
+                            </button>
+                          ) : (
+                            <button onClick={() => handleAction("ban", user._id)} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-red-600 hover:bg-red-50 transition">
+                              🔨 Ban Account
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -140,8 +221,8 @@ export default function UsersManagementPage() {
 
       {/* Network Modal Overlay */}
       {selectedUserId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#112a46]/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#112a46]/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-in zoom-in-95 duration-200">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-extrabold text-[#112a46]">Referral Network</h3>
               <button onClick={() => setSelectedUserId(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-500 hover:bg-gray-200">
@@ -192,7 +273,7 @@ function UserNetworkView({ userId }: { userId: string }) {
         
         <div className="max-h-60 space-y-2 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
           {network.downline.length > 0 ? (
-            network.downline.map((ref, idx) => (
+            network.downline.map((ref: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between rounded-lg border border-transparent p-2 transition hover:border-gray-100 hover:bg-gray-50">
                 <div className="flex items-center gap-3">
                   <span className={`fi fi-${ref.country.toLowerCase()} rounded-sm shadow-sm`} />

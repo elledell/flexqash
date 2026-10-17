@@ -19,6 +19,7 @@ export default defineSchema({
     role: v.optional(v.union(v.literal("member"), v.literal("admin"))),
     membership: v.optional(v.union(v.literal("none"), v.literal("active"))),
     membershipPaidAt: v.optional(v.number()),
+    isBanned: v.optional(v.boolean()),
 
     referralCode: v.optional(v.string()),
     invitedBy: v.optional(v.id("users")),

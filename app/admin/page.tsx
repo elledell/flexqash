@@ -3,7 +3,9 @@
 import { useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
+// Complete updated countries list
 const COUNTRIES = [
   { code: "ALL", name: "All Countries", currency: "" },
   { code: "KE", name: "Kenya", currency: "KES" },
@@ -12,6 +14,12 @@ const COUNTRIES = [
   { code: "MW", name: "Malawi", currency: "MWK" },
   { code: "ZM", name: "Zambia", currency: "ZMW" },
   { code: "NG", name: "Nigeria", currency: "NGN" },
+  { code: "GH", name: "Ghana", currency: "GHS" },
+  { code: "SS", name: "South Sudan", currency: "SSP" },
+  { code: "BW", name: "Botswana", currency: "BWP" },
+  { code: "CM", name: "Cameroon", currency: "XAF" },
+  { code: "RW", name: "Rwanda", currency: "RWF" },
+  { code: "INT", name: "International", currency: "USD" },
 ];
 
 export default function AdminDashboardPage() {
@@ -21,8 +29,14 @@ export default function AdminDashboardPage() {
   const selectedCurrency = COUNTRIES.find(c => c.code === country)?.currency || "MIXED";
 
   if (data === undefined) {
-    return <div className="font-bold text-[#112a46]">Loading Dashboard...</div>;
+    return <div className="font-bold text-[#112a46] p-8">Loading Dashboard...</div>;
   }
+
+  // Calculate the 24h user growth comparing the last item in the chart data to the previous one
+  const todayUsers = data.chartData[6]?.users || 0;
+  const yesterdayUsers = data.chartData[5]?.users || 0;
+  const userGrowth = todayUsers - yesterdayUsers;
+  const growthText = userGrowth >= 0 ? `+${userGrowth}` : `${userGrowth}`;
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -49,7 +63,7 @@ export default function AdminDashboardPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 text-green-600">👥</span>
           </div>
           <h2 className="mt-2 text-3xl font-extrabold text-[#112a46]">{data.totalUsers.toLocaleString()}</h2>
-          <p className="mt-1 text-xs text-gray-400">+0 in 24h</p>
+          <p className="mt-1 text-xs text-gray-400">{growthText} in 24h</p>
         </div>
 
         <div className="rounded-2xl border border-orange-100 bg-orange-50/30 p-6">
@@ -65,49 +79,57 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Placeholder Charts */}
+      {/* Dynamic Recharts */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-64 flex flex-col">
+        
+        {/* Users Bar Chart */}
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-72 flex flex-col">
           <h3 className="mb-4 text-sm font-medium text-[#112a46]">Weekly User Registrations</h3>
-          <div className="flex-1 flex items-end justify-between gap-2 border-l border-b border-gray-200 px-2 pb-2 relative">
-            {/* Fake grid lines */}
-            <div className="absolute w-full border-t border-dashed border-gray-200 bottom-1/4"></div>
-            <div className="absolute w-full border-t border-dashed border-gray-200 bottom-2/4"></div>
-            <div className="absolute w-full border-t border-dashed border-gray-200 bottom-3/4"></div>
-            
-            {/* Fake bars */}
-            <div className="w-full bg-[#3b82f6] rounded-t-sm z-10" style={{ height: '30%' }}></div>
-            <div className="w-full bg-[#3b82f6] rounded-t-sm z-10" style={{ height: '70%' }}></div>
-            <div className="w-full bg-[#3b82f6] rounded-t-sm z-10" style={{ height: '70%' }}></div>
-            <div className="w-full opacity-0"></div>
-            <div className="w-full opacity-0"></div>
-            <div className="w-full opacity-0"></div>
-          </div>
-          <div className="flex justify-between px-2 pt-2 text-[10px] text-gray-400">
-            <span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+          <div className="flex-1 min-h-0 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.chartData}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
+                <YAxis hide />
+                <Tooltip 
+                  cursor={{ fill: '#f3f4f6' }} 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold', color: '#112a46' }} 
+                />
+                <Bar dataKey="users" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-64 flex flex-col">
+        {/* Deposits Area Chart */}
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-72 flex flex-col">
           <h3 className="mb-4 text-sm font-medium text-[#112a46]">Weekly Deposits</h3>
-          <div className="flex-1 flex items-end justify-between gap-2 border-l border-b border-gray-200 px-2 pb-2 relative">
-            <div className="absolute w-full border-t border-dashed border-gray-200 bottom-1/4"></div>
-            <div className="absolute w-full border-t border-dashed border-gray-200 bottom-2/4"></div>
-            <div className="absolute w-full border-t border-dashed border-gray-200 bottom-3/4"></div>
-            {/* Flat line representing 0 */}
-            <div className="w-full border-b-2 border-[#3b82f6] z-10 mb-[-1px]"></div>
-          </div>
-          <div className="flex justify-between px-2 pt-2 text-[10px] text-gray-400">
-            <span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+          <div className="flex-1 min-h-0 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.chartData}>
+                <defs>
+                  <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1abc9c" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#1abc9c" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
+                <YAxis hide />
+                <Tooltip 
+                  cursor={{ stroke: '#1abc9c', strokeWidth: 1, strokeDasharray: '4 4' }} 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold', color: '#112a46' }} 
+                />
+                <Area type="monotone" dataKey="deposits" stroke="#1abc9c" strokeWidth={3} fillOpacity={1} fill="url(#colorDeposits)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
+
       </div>
 
       {/* Recent Activity Table */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-50">
           <h3 className="font-medium text-[#112a46]">Recent Activity</h3>
-          <button className="text-sm font-medium text-gray-500 hover:text-[#112a46]">Export</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
@@ -125,7 +147,7 @@ export default function AdminDashboardPage() {
             <tbody className="divide-y divide-gray-50">
               {data.recentActivity.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-400">No activity found for this region.</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-400 font-medium">No activity found for this region.</td>
                 </tr>
               ) : (
                 data.recentActivity.map((act, i) => (
@@ -152,7 +174,7 @@ export default function AdminDashboardPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right text-xs text-gray-500">
+                    <td className="px-6 py-4 text-right text-xs text-gray-500 font-medium">
                       {new Date(act.time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}, {new Date(act.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
