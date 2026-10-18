@@ -1,6 +1,6 @@
 import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { internal } from "./_generated/api"; // ✅ Correct import
+import { internal } from "./_generated/api"; 
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { calculateWithdrawalFee } from "./financials";
 import { requireAdmin } from "./access";
@@ -23,7 +23,7 @@ export const getWithdrawalInfo = query({
       .collect();
     const totalEarnings = earnings.reduce((sum, e) => sum + e.amount, 0);
 
-    // Sum pending and approved withdrawals
+    // Sum pending and approved withdrawals (includes internal deductions for accurate balance)
     const withdrawals = await ctx.db
       .query("withdrawals")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -120,11 +120,21 @@ export const getUserWithdrawals = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    return await ctx.db
+    const allWithdrawals = await ctx.db
       .query("withdrawals")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(25);
+      .collect();
+      
+    // Filter out internal system deductions so they do not show in the UI history
+    return allWithdrawals
+      .filter(
+        (w) => 
+          w.method !== "wallet_transfer" && 
+          w.method !== "gig_bidding_fee" && 
+          w.method !== "investment_purchase"
+      )
+      .slice(0, 25);
   },
 });
 

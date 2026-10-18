@@ -1,5 +1,6 @@
 import { Doc, Id } from "./_generated/dataModel";
 import { MutationCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { COUNTRY_FINANCIALS } from "./financials";
 
 export async function distributeCommissions(
@@ -52,7 +53,7 @@ export async function distributeCommissions(
   for (const level of levels) {
     if (!currentSponsorId) break;
 
-    // Explicitly typing `sponsor` as Doc<"users"> | null resolves the TS error!
+    // Explicitly typing `sponsor` as Doc<"users"> | null resolves the TS error
     const sponsor: Doc<"users"> | null = await ctx.db.get(currentSponsorId);
     if (!sponsor) break;
 
@@ -71,16 +72,37 @@ export async function distributeCommissions(
         const sponsorFinancials =
           COUNTRY_FINANCIALS[sponsorCountry] ?? COUNTRY_FINANCIALS.KE;
         const sponsorCurrency = sponsor.currency || sponsorFinancials.currency;
-
-        const baseBonusInSourceCurrency = sourceFinancials[level.tierKey];
         const fallbackInSponsorCurrency = sponsorFinancials[level.tierKey];
 
-        const payoutAmount = convertAmount(
-          baseBonusInSourceCurrency,
-          sourceFinancials.currency,
-          sponsorCurrency,
-          fallbackInSponsorCurrency
-        );
+        let payoutAmount = 0;
+
+        // ⚠️ THE MALAWI EXCEPTION RULE ⚠️
+        if (sourceCountry === "MW" && sponsorCountry !== "MW") {
+          // Hardcoded KES baseline for foreigners referring Malawians
+          const MALAWI_FOREIGNER_EXCEPTION_KES = {
+            l1: 150,
+            l2: 80,
+            l3: 50,
+          };
+          const exceptionBaseInKES = MALAWI_FOREIGNER_EXCEPTION_KES[level.tierKey];
+          
+          payoutAmount = convertAmount(
+            exceptionBaseInKES,
+            "KES", // Starting from our fixed KES rate
+            sponsorCurrency, // Converting to the foreign sponsor's currency
+            fallbackInSponsorCurrency
+          );
+        } else {
+          // The Standard Logic (Malawi -> Malawi, or Kenya -> Uganda, etc.)
+          const baseBonusInSourceCurrency = sourceFinancials[level.tierKey];
+          
+          payoutAmount = convertAmount(
+            baseBonusInSourceCurrency,
+            sourceFinancials.currency,
+            sponsorCurrency,
+            fallbackInSponsorCurrency
+          );
+        }
 
         if (payoutAmount > 0) {
           await ctx.db.insert("earnings", {
@@ -92,6 +114,20 @@ export async function distributeCommissions(
             sourceCountry: sourceCountry,
             sourceUsername: newMember.username || newMember.name || "Member",
           });
+
+          // 📩 Fire the Earnings Notification Email
+          if (sponsor.email) {
+            // Converts "level_1" to "1" for the email subject line
+            const levelNumber = level.source.split("_")[1]; 
+            await ctx.scheduler.runAfter(0, internal.emails.sendEarningsEmail, {
+              email: sponsor.email,
+              name: sponsor.name || sponsor.username || "Member",
+              amount: payoutAmount,
+              currency: sponsorCurrency,
+              level: levelNumber,
+              fromUsername: newMember.username || newMember.name || "Member",
+            });
+          }
         }
       }
     }

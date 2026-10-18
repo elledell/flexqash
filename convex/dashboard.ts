@@ -10,7 +10,7 @@ export const getStats = query({
     const user = await ctx.db.get(userId);
     if (!user) return null;
 
-    // 1. Sum up all Earnings
+    // 1. Sum up all Main Affiliate Earnings
     const earnings = await ctx.db
       .query("earnings")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -31,7 +31,7 @@ export const getStats = query({
       }
     }
 
-    // 2. Sum up all Withdrawals
+    // 2. Sum up all Main Withdrawals & Deductions
     const withdrawals = await ctx.db
       .query("withdrawals")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -42,10 +42,10 @@ export const getStats = query({
 
     for (const w of withdrawals) {
       if (w.status === "approved") withdrawn += w.amount;
-      if (w.status === "pending") pendingWithdrawals += w.amount; // Lock pending funds from balance
+      if (w.status === "pending") pendingWithdrawals += w.amount; 
     }
 
-    // 3. Calculate Live Balance
+    // 3. Calculate Live Main Balance
     const balance = totalEarnings - withdrawn - pendingWithdrawals;
 
     // 4. Fetch the initial activation expense for display
@@ -87,6 +87,41 @@ export const getStats = query({
       });
     }
 
+    // 6. Calculate Isolated Service Balances
+    const serviceEarningsDocs = await ctx.db
+      .query("serviceEarnings")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const serviceWithdrawalsDocs = await ctx.db
+      .query("serviceWithdrawals")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const serviceBalances = {
+      chat: 0,
+      ads: 0,
+      tiktok: 0,
+      youtube: 0,
+      survey: 0,
+      blog: 0,
+      hotel_review: 0,
+    };
+
+    // Add up the earned amounts
+    for (const e of serviceEarningsDocs) {
+      if (e.source in serviceBalances) {
+        serviceBalances[e.source as keyof typeof serviceBalances] += e.amount;
+      }
+    }
+
+    // Subtract any pending or approved service withdrawals
+    for (const w of serviceWithdrawalsDocs) {
+      if (w.status !== "rejected" && w.service in serviceBalances) {
+        serviceBalances[w.service as keyof typeof serviceBalances] -= w.amount;
+      }
+    }
+
     return {
       username: user.username ?? user.name ?? "Member",
       currency: user.currency ?? "KES",
@@ -101,7 +136,8 @@ export const getStats = query({
         today: todayReferrals,
         thisWeek: thisWeekReferrals,
         chartData,
-      }
+      },
+      serviceBalances, // Pushed directly to your UI block
     };
   },
 });

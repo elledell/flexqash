@@ -2,15 +2,14 @@ import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
 
-// NOTE: If Resend throws a delivery error later, change this to "onboarding@resend.dev" until your domain is verified.
-const SENDER_EMAIL = "FlexQash <hellenmochama7@gmail.com>"; 
+// Using the Resend testing email until your flexqash.com domain is verified
+const SENDER_EMAIL = "FlexQash <onboarding@resend.dev>"; 
 
 export const sendActivationEmail = internalAction({
   args: { email: v.string(), name: v.string() },
   handler: async (ctx, { email, name }) => {
-    // 1. Initialize inside the handler to prevent build-time crashes
-    // NOTE: If your key is named something else in your Convex settings (like AUTH_RESEND_KEY), change it here!
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    // 1. Initialize inside the handler using your exact environment variable name
+    const resend = new Resend(process.env.AUTH_RESEND_KEY!);
 
     try {
       await resend.emails.send({
@@ -25,7 +24,7 @@ export const sendActivationEmail = internalAction({
             <br/>
             <a href="https://flexqash.com/dashboard" style="background-color: #112a46; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
             <br/><br/>
-            <p>Best regards,<br/><strong>The FlexQash Team</strong></p>
+            <p>Best regards,<br/><strong>Luxtech Management</strong></p>
           </div>
         `
       });
@@ -38,8 +37,8 @@ export const sendActivationEmail = internalAction({
 export const sendWithdrawalApprovalEmail = internalAction({
   args: { email: v.string(), name: v.string(), amount: v.number(), currency: v.string() },
   handler: async (ctx, { email, name, amount, currency }) => {
-    // 1. Initialize inside the handler
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    // 1. Initialize inside the handler using your exact environment variable name
+    const resend = new Resend(process.env.AUTH_RESEND_KEY!);
 
     try {
       await resend.emails.send({
@@ -54,12 +53,48 @@ export const sendWithdrawalApprovalEmail = internalAction({
             <p>Please check your mobile money or bank account to confirm you have received the funds.</p>
             <br/>
             <p>Thank you for using FlexQash!</p>
-            <p><strong>The FlexQash Team</strong></p>
+            <p><strong>LUXTECH MANAGEMENT/strong></p>
           </div>
         `
       });
     } catch (error) {
       console.error("Failed to send withdrawal email:", error);
+    }
+  }
+});
+export const sendEarningsEmail = internalAction({
+  args: {
+    email: v.string(),
+    name: v.string(),
+    amount: v.number(),
+    currency: v.string(),
+    level: v.string(),
+    fromUsername: v.string(),
+  },
+  handler: async (ctx, { email, name, amount, currency, level, fromUsername }) => {
+    const resend = new Resend(process.env.AUTH_RESEND_KEY!);
+
+    try {
+      await resend.emails.send({
+        from: SENDER_EMAIL,
+        to: email,
+        subject: `FlexQash L${level} Earnings 💰`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #112a46; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+            <h2 style="color: #1abc9c;">Congratulations! 🎉</h2>
+            <p>Hello ${name},</p>
+            <p>You have just earned <strong>${currency} ${amount.toLocaleString()}</strong> from a Level ${level} referral!</p>
+            <p>This commission was instantly added to your wallet because <strong>${fromUsername}</strong> just joined and activated their account in your downline network.</p>
+            <br/>
+            <a href="https://flexqash.com/dashboard" style="background-color: #112a46; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">View My Wallet</a>
+            <br/><br/>
+            <p>Keep up the great work!</p>
+            <p><strong>Luxtech Management</strong></p>
+          </div>
+        `
+      });
+    } catch (error) {
+      console.error("Failed to send earnings email:", error);
     }
   }
 });

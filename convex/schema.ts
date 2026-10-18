@@ -114,6 +114,14 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_source", ["userId", "source"]),
 
+    serviceWithdrawals: defineTable({
+    userId: v.id("users"),
+    amount: v.number(),
+    service: v.string(), // e.g., "chat", "youtube", "hotel_review"
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    requestedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
   investmentPackages: defineTable({
     name: v.string(),
     cost: v.number(), 

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Eye, EyeOff, Wallet, ArrowDownToLine, Users, Gift } from "lucide-react"; 
+import Link from "next/link";// Import decorative icons
 
 export default function DashboardPage() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -16,7 +18,7 @@ export default function DashboardPage() {
   const bonusStats = useQuery(api.bonus.getStatus);
 
   const [copied, setCopied] = useState(false);
- 
+  const [showBalances, setShowBalances] = useState(true); // Global hide/show state
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -30,14 +32,12 @@ export default function DashboardPage() {
     return <div className="flex min-h-screen items-center justify-center text-[#112a46] font-medium">Loading dashboard...</div>;
   }
 
-  // Safely check if membershipStatus exists before reading .active
   if (!membershipStatus?.active) return null;
 
   if (stats === null) {
     return <div className="p-8 text-center text-red-500 font-bold">Error loading dashboard data.</div>;
   }
 
-  // Construct referral link based on domain and username safely
   const baseURL = typeof window !== "undefined" ? window.location.origin : "https://flexqash.com";
   const referralLink = `${baseURL}/sign-up?ref=${me.username || (me.name ? me.name.replace(/\s+/g, '') : 'user')}`;
 
@@ -45,6 +45,11 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Helper function to safely mask money when the eye is closed
+  const maskMoney = (amount: number) => {
+    return showBalances ? amount.toLocaleString() : "****";
   };
 
   return (
@@ -56,7 +61,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-     {/* Main Total Earnings Card - Luminous Green Gradient */}
+      {/* Main Total Earnings Card */}
       <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#00c853] via-[#10b981] to-[#059669] p-6 text-white shadow-xl shadow-emerald-500/20 sm:p-8">
         <div className="mb-3 flex items-center gap-2 text-base font-extrabold tracking-wide">
           <span>📍 Hello, {stats.username}</span>
@@ -67,47 +72,77 @@ export default function DashboardPage() {
         </p>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Total Earnings</p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Total Earnings</p>
+              {/* Hide/Show Balance Toggle */}
+              <button 
+                onClick={() => setShowBalances(!showBalances)}
+                className="rounded-full bg-white/20 p-1.5 backdrop-blur-sm transition-colors hover:bg-white/30"
+              >
+                {showBalances ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </button>
+            </div>
             <h2 className="mt-1 text-4xl font-black tracking-tight drop-shadow-sm">
-              {stats.currency} {stats.totalEarnings.toLocaleString()}
+              {stats.currency} {maskMoney(stats.totalEarnings)}
             </h2>
           </div>
           <div className="rounded-xl border border-white/30 bg-black/15 px-6 py-4 text-right backdrop-blur-md">
             <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Expense</p>
-            <p className="text-2xl font-black">{stats.currency} {stats.expense.toLocaleString()}</p>
+            <p className="text-2xl font-black">{stats.currency} {maskMoney(stats.expense)}</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">one-time</p>
           </div>
         </div>
       </div>
 
-      {/* 4-Grid Metrics */}
+      {/* 4-Grid Metrics with Left-Aligned Icons */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Balance - Changed to BLUE */}
-        <div className="rounded-2xl bg-[#3498db] p-6 text-white shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider opacity-90">Balance</p>
-          <h3 className="mt-2 text-2xl font-extrabold">{stats.currency} {stats.balance.toLocaleString()}</h3>
-          <p className="mt-4 text-xs uppercase tracking-widest opacity-80">All Time</p>
+        
+        {/* Balance - BLUE */}
+        <div className="flex items-center gap-4 rounded-2xl bg-[#3498db] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Wallet className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider opacity-90">Balance</p>
+            <h3 className="mt-0.5 text-xl font-extrabold">{stats.currency} {maskMoney(stats.balance)}</h3>
+            <p className="mt-0.5 text-[9px] uppercase tracking-widest opacity-80">All Time</p>
+          </div>
         </div>
         
-        {/* Withdrawn - Changed to YELLOW */}
-        <div className="rounded-2xl bg-[#f1c40f] p-6 text-white shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider opacity-90">Withdrawn</p>
-          <h3 className="mt-2 text-2xl font-extrabold">{stats.currency} {stats.withdrawn.toLocaleString()}</h3>
-          <p className="mt-4 text-xs uppercase tracking-widest opacity-80">All Time</p>
+        {/* Withdrawn - YELLOW */}
+        <div className="flex items-center gap-4 rounded-2xl bg-[#f1c40f] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <ArrowDownToLine className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider opacity-90">Withdrawn</p>
+            <h3 className="mt-0.5 text-xl font-extrabold">{stats.currency} {maskMoney(stats.withdrawn)}</h3>
+            <p className="mt-0.5 text-[9px] uppercase tracking-widest opacity-80">All Time</p>
+          </div>
         </div>
         
-       {/* Affiliate Earnings - Changed to PURPLE */}
-        <div className="rounded-2xl bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] p-6 text-white shadow-md shadow-purple-500/20">
-          <p className="text-xs font-extrabold uppercase tracking-wider opacity-90">Affiliate Earnings</p>
-          <h3 className="mt-2 text-2xl font-black tracking-tight">{stats.currency} {stats.affiliateEarnings.toLocaleString()}</h3>
-          <p className="mt-4 text-xs font-bold uppercase tracking-widest opacity-80">All Time</p>
+        {/* Affiliate Earnings - PURPLE */}
+        <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] p-5 text-white shadow-md shadow-purple-500/20 transition-transform hover:scale-[1.02]">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Users className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Affiliates</p>
+            <h3 className="mt-0.5 text-xl font-black tracking-tight">{stats.currency} {maskMoney(stats.affiliateEarnings)}</h3>
+            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest opacity-80">All Time</p>
+          </div>
         </div>
         
-        {/* Agent Bonus - Changed to GRAY */}
-        <div className="rounded-2xl bg-[#7f8c8d] p-6 text-white shadow-md">
-          <p className="text-xs font-bold uppercase tracking-wider opacity-90">Agent Bonus</p>
-          <h3 className="mt-2 text-2xl font-extrabold">{stats.currency} {stats.agentBonus.toLocaleString()}</h3>
-          <p className="mt-4 text-xs uppercase tracking-widest opacity-80">All Time</p>
+        {/* Agent Bonus - GRAY */}
+        <div className="flex items-center gap-4 rounded-2xl bg-[#7f8c8d] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Gift className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider opacity-90">Agent Bonus</p>
+            <h3 className="mt-0.5 text-xl font-extrabold">{stats.currency} {maskMoney(stats.agentBonus)}</h3>
+            <p className="mt-0.5 text-[9px] uppercase tracking-widest opacity-80">All Time</p>
+          </div>
         </div>
       </div>
 
@@ -166,13 +201,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Earnings Mix Placeholder */}
+        {/* Earnings Mix */}
         <div className="flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 className="mb-6 border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">EARNINGS MIX</h3>
           <div className="flex flex-1 flex-col items-center justify-center">
             <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full border-[12px] border-[#1abc9c]">
               <span className="text-sm font-bold text-[#112a46]">
-                {stats.currency} {stats.totalEarnings >= 1000 ? (stats.totalEarnings/1000).toFixed(1) + 'k' : stats.totalEarnings}
+                {stats.currency} {stats.totalEarnings >= 1000 ? maskMoney(parseFloat((stats.totalEarnings/1000).toFixed(1))) + (showBalances ? 'k' : '') : maskMoney(stats.totalEarnings)}
               </span>
             </div>
             <div className="flex flex-wrap justify-center gap-2 text-xs font-medium text-gray-500">
@@ -208,7 +243,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-     {/* Agent Bonus Goal */}
+      {/* Agent Bonus Goal */}
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">AGENT BONUS GOAL</h3>
@@ -222,6 +257,44 @@ export default function DashboardPage() {
             className="h-2.5 rounded-full bg-[#8e2de2] transition-all duration-1000 ease-out" 
             style={{ width: `${bonusStats?.progressPercentage || 0}%` }}
           ></div>
+        </div>
+      </div>
+      {/* Service Balance Section */}
+     
+      <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h3 className="mb-6 border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46] uppercase">
+          Service Balance
+        </h3>
+        
+        <div className="flex flex-col gap-4">
+          {[
+            { name: "Chat & Teaching Earnings", id: "chat", amount: stats.serviceBalances?.chat || 0, icon: "💬", color: "bg-emerald-500", link: "/withdraw/chat" },
+            { name: "Ads Earnings", id: "ads", amount: stats.serviceBalances?.ads || 0, icon: "📺", color: "bg-blue-400", link: "/withdraw/ads" },
+            { name: "TikTok Earnings", id: "tiktok", amount: stats.serviceBalances?.tiktok || 0, icon: "🎵", color: "bg-orange-400", link: "/withdraw/tiktok" },
+            { name: "YouTube Earnings", id: "youtube", amount: stats.serviceBalances?.youtube || 0, icon: "▶️", color: "bg-red-500", link: "/withdraw/youtube" },
+            { name: "Survey Earnings", id: "survey", amount: stats.serviceBalances?.survey || 0, icon: "📋", color: "bg-teal-500", link: "/withdraw/survey" },
+            { name: "Blog Earnings", id: "blog", amount: stats.serviceBalances?.blog || 0, icon: "✍️", color: "bg-pink-400", link: "/withdraw/blog" },
+            { name: "Hotel Reviews Earnings", id: "hotel_review", amount: stats.serviceBalances?.hotel_review || 0, icon: "🏨", color: "bg-indigo-500", link: "/withdraw/hotel-reviews" },
+          ].map((service, idx) => (
+            <Link 
+              href={service.link} 
+              key={idx} 
+              className="flex items-center justify-between border-b border-gray-50 pb-4 last:border-0 last:pb-0 hover:bg-gray-50/50 p-2 -mx-2 rounded-lg transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${service.color}`}>
+                  {service.icon}
+                </div>
+                <span className="text-sm font-bold text-gray-700">{service.name}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-extrabold text-[#1abc9c]">
+                  {stats.currency} {maskMoney(service.amount)}
+                </span>
+                <span className="text-gray-300">›</span>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 

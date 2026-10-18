@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import "flag-icons/css/flag-icons.min.css";
+
 const CURRENCIES = [
   { code: "UGX", country: "UG", name: "Ugandan Shilling" },
   { code: "TZS", country: "TZ", name: "Tanzanian Shilling" },
@@ -17,6 +18,7 @@ const CURRENCIES = [
   { code: "XAF", country: "CM", name: "Central African CFA Franc" },
   { code: "SSP", country: "SS", name: "South Sudanese Pound" },
   { code: "CDF", country: "CD", name: "Congolese Franc" },
+  { code: "USD", country: "US", name: "US Dollar (International)" }, // <-- Added International USD
 ];
 
 export default function AdminRatesPage() {
