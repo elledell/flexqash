@@ -108,7 +108,10 @@ export default defineSchema({
       v.literal("youtube"),
       v.literal("survey"),
       v.literal("blog"),
-      v.literal("hotel_review")
+      v.literal("hotel_review"),
+      v.literal("reels"),
+      v.literal("article"),
+      v.literal("ads")
     ),
   })
     .index("by_user", ["userId"])

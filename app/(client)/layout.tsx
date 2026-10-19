@@ -222,11 +222,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             <Link href="/products/tiktok" className={navItemClass("/products/tiktok")}>🎵 TikTok Videos</Link>
             <Link href="/products/surveys" className={navItemClass("/products/surveys")}>📋 Surveys</Link>
             <Link href="/products/reels" className={navItemClass("/products/reels")}>🎬 Reels</Link>
-            <Link href="/products/movies" className={navItemClass("/products/movies")}>🍿 Movies</Link>
+            
             <Link href="/products/articles" className={navItemClass("/products/articles")}>✍️ Article Writing</Link>
-            <Link href="/products/spin" className={navItemClass("/products/spin")}>
-              🎡 Spin &amp; Win <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
-            </Link>
+<a 
+  href="https://1win.com/" 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  className={navItemClass("/products/spin")}
+>
+  🎡 Spin &amp; Win <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
+</a>
             <Link href="/products/ads" className={navItemClass("/products/ads")}>🖱️ Click Ads</Link>
           </nav>
 

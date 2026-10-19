@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Eye, EyeOff, Wallet, ArrowDownToLine, Users, Gift } from "lucide-react"; 
-import Link from "next/link";// Import decorative icons
+import { Eye, EyeOff, Wallet, ArrowDownToLine, Users, Gift, CreditCard } from "lucide-react"; 
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const bonusStats = useQuery(api.bonus.getStatus);
 
   const [copied, setCopied] = useState(false);
-  const [showBalances, setShowBalances] = useState(true); // Global hide/show state
+  const [showBalances, setShowBalances] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -47,7 +47,6 @@ export default function DashboardPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Helper function to safely mask money when the eye is closed
   const maskMoney = (amount: number) => {
     return showBalances ? amount.toLocaleString() : "****";
   };
@@ -74,7 +73,6 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center gap-3">
               <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Total Earnings</p>
-              {/* Hide/Show Balance Toggle */}
               <button 
                 onClick={() => setShowBalances(!showBalances)}
                 className="rounded-full bg-white/20 p-1.5 backdrop-blur-sm transition-colors hover:bg-white/30"
@@ -86,18 +84,23 @@ export default function DashboardPage() {
               {stats.currency} {maskMoney(stats.totalEarnings)}
             </h2>
           </div>
-          <div className="rounded-xl border border-white/30 bg-black/15 px-6 py-4 text-right backdrop-blur-md">
-            <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Expense</p>
-            <p className="text-2xl font-black">{stats.currency} {maskMoney(stats.expense)}</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">one-time</p>
+          
+          {/* UPDATED EXPENSE CARD WITH ICON */}
+          <div className="flex items-center justify-between gap-6 rounded-xl border border-white/30 bg-black/15 px-6 py-4 backdrop-blur-md">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/20">
+              <CreditCard className="h-5 w-5 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-white/90">Expense</p>
+              <p className="text-2xl font-black">{stats.currency} {maskMoney(stats.expense)}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">one-time</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* 4-Grid Metrics with Left-Aligned Icons */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        
-        {/* Balance - BLUE */}
         <div className="flex items-center gap-4 rounded-2xl bg-[#3498db] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <Wallet className="h-6 w-6 text-white" />
@@ -109,7 +112,6 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {/* Withdrawn - YELLOW */}
         <div className="flex items-center gap-4 rounded-2xl bg-[#f1c40f] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <ArrowDownToLine className="h-6 w-6 text-white" />
@@ -121,7 +123,6 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {/* Affiliate Earnings - PURPLE */}
         <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] p-5 text-white shadow-md shadow-purple-500/20 transition-transform hover:scale-[1.02]">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <Users className="h-6 w-6 text-white" />
@@ -133,7 +134,6 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {/* Agent Bonus - GRAY */}
         <div className="flex items-center gap-4 rounded-2xl bg-[#7f8c8d] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <Gift className="h-6 w-6 text-white" />
@@ -148,8 +148,6 @@ export default function DashboardPage() {
 
       {/* Analytics & Referral Section */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        
-        {/* Referral Chart */}
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">REFERRALS — LAST 7 DAYS</h3>
@@ -201,7 +199,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Earnings Mix */}
         <div className="flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 className="mb-6 border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">EARNINGS MIX</h3>
           <div className="flex flex-1 flex-col items-center justify-center">
@@ -244,7 +241,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Agent Bonus Goal */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46]">AGENT BONUS GOAL</h3>
           <span className="rounded-full bg-[#e0f2f1] px-3 py-1 text-xs font-bold text-[#1abc9c]">
@@ -259,8 +256,54 @@ export default function DashboardPage() {
           ></div>
         </div>
       </div>
+
+      {/* NEW TIMETABLE SECTION */}
+      <div className="mb-6 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b border-gray-50 p-6">
+          <h3 className="flex items-center gap-3 text-lg font-black text-[#112a46] tracking-wide uppercase">
+            <span className="text-xl">📅</span> Timetable
+          </h3>
+          <span className="flex items-center gap-1.5 rounded-full bg-[#1abc9c]/10 px-3 py-1.5 text-xs font-bold text-[#1abc9c] uppercase tracking-wider">
+            <span>🕒</span> Weekly
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-[#112a46] text-white">
+              <tr>
+                <th className="px-6 py-4 font-black w-16 text-center tracking-wider">#</th>
+                <th className="px-6 py-4 font-black tracking-wider uppercase">Name</th>
+                <th className="px-6 py-4 font-black tracking-wider uppercase">Day 1</th>
+                <th className="px-6 py-4 font-black tracking-wider uppercase">Day 2</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {[
+                { id: 1, name: "YouTube Videos", day1: "Wednesday", day2: "Saturday" },
+                { id: 2, name: "TikTok Videos", day1: "Monday", day2: "Thursday" },
+                { id: 3, name: "Surveys", day1: "Tuesday", day2: "Friday" },
+                { id: 4, name: "Reels", day1: "Wednesday", day2: "Sunday" },
+                { id: 5, name: "Article Writing", day1: "Monday", day2: "Friday" },
+                { id: 6, name: "Click Ads", day1: "Tuesday", day2: "Thursday" },
+                { id: 7, name: "Hotel Reviews", day1: "Wednesday", day2: "Saturday" },
+              ].map((row) => (
+                <tr key={row.id} className="transition-colors hover:bg-[#f8f9fc]">
+                  <td className="px-6 py-4">
+                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-[#1abc9c] text-sm font-black text-white shadow-sm">
+                      {row.id}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 font-bold text-[#112a46] text-base">{row.name}</td>
+                  <td className="px-6 py-4 font-medium text-gray-500">{row.day1}</td>
+                  <td className="px-6 py-4 font-medium text-gray-500">{row.day2}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Service Balance Section */}
-     
       <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <h3 className="mb-6 border-l-4 border-[#1abc9c] pl-3 font-bold text-[#112a46] uppercase">
           Service Balance
