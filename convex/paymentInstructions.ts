@@ -300,7 +300,24 @@ CM: {
   },
   
   RW: {
-    type: "coming_soon",
-    methods: [],
+    type: "manual",
+    methods: [
+      {
+        id: "mtn_rwanda",
+        title: "RWANDA MTN MOMO PAYMENT (RWF 6500)",
+        buttonLabel: "Pay with MTN Rwanda",
+        copyableCode: "256754168057",
+        copyableLabel: "Nimero",
+        steps: [
+          "KWISHYURA UKORESHEJE MTN RWANDA (BYIKORA)",
+          "Kanda *182*1*3# wemeze.",
+          "Hitamo 1 (mobile number) wemeze.",
+          "Shyiramo nimero: 256754168057-Muguywa Gerald",
+          "Shyiramo umubare w'amafaranga (6500) wemeze.",
+          "Hitamo 2 (salary) wemeze.",
+          "Komeza ushyiremo PIN."
+        ],
+      },
+    ],
   },
 };
