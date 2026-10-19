@@ -24,6 +24,7 @@ import type * as dashboard from "../dashboard.js";
 import type * as deposit from "../deposit.js";
 import type * as emails from "../emails.js";
 import type * as financials from "../financials.js";
+import type * as forex from "../forex.js";
 import type * as gigs from "../gigs.js";
 import type * as hotels from "../hotels.js";
 import type * as http from "../http.js";
@@ -63,6 +64,7 @@ declare const fullApi: ApiFromModules<{
   deposit: typeof deposit;
   emails: typeof emails;
   financials: typeof financials;
+  forex: typeof forex;
   gigs: typeof gigs;
   hotels: typeof hotels;
   http: typeof http;

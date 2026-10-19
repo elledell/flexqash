@@ -153,6 +153,19 @@ export default defineSchema({
     .index("by_user_gig", ["userId", "gigId"])
     .index("by_user", ["userId"]),
 
+    forexMembers: defineTable({
+    userId: v.id("users"),
+    amountPaid: v.number(),
+    currency: v.string(),
+    joinedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  forexSettings: defineTable({
+    meetingLink: v.string(),
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.id("users")),
+  }),
+
   // ------------------------------------------------------------------
   // HOTEL REVIEWS
   // ------------------------------------------------------------------

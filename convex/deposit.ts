@@ -1,5 +1,5 @@
 import { v, ConvexError } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const submitManualDeposit = mutation({
@@ -15,7 +15,7 @@ export const submitManualDeposit = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user) throw new ConvexError("Account not found.");
-    if (amount <= 0) throw new ConvexError("Invalid deposit amount.");
+    if (amount < 100) throw new ConvexError("Minimum deposit is 100.");
 
     const paymentId = await ctx.db.insert("payments", {
       userId,
@@ -46,5 +46,44 @@ export const getUserDeposits = query({
       .filter((q) => q.eq(q.field("purpose"), "deposit"))
       .order("desc")
       .take(20);
+  },
+});
+
+// Helper: Create pending automated M-Pesa deposit
+export const createPendingMpesaDeposit = internalMutation({
+  args: {
+    userId: v.id("users"),
+    phone: v.string(),
+    amount: v.number(),
+  },
+  handler: async (ctx, { userId, phone, amount }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) throw new ConvexError("Account not found.");
+    if (amount < 100) throw new ConvexError("Minimum deposit is 100 KES.");
+
+    const paymentId = await ctx.db.insert("payments", {
+      userId,
+      purpose: "deposit",
+      provider: "mpesa",
+      amount,
+      currency: user.currency ?? "KES",
+      phone,
+      methodTitle: "M-Pesa Express Deposit",
+      status: "pending",
+    });
+
+    return { paymentId, amount };
+  },
+});
+
+// Helper: Attach Daraja identifiers to deposit record
+export const attachDepositCheckout = internalMutation({
+  args: {
+    paymentId: v.id("payments"),
+    checkoutRequestId: v.string(),
+    merchantRequestId: v.string(),
+  },
+  handler: async (ctx, { paymentId, checkoutRequestId, merchantRequestId }) => {
+    await ctx.db.patch(paymentId, { checkoutRequestId, merchantRequestId });
   },
 });

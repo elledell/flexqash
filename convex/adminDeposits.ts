@@ -16,6 +16,7 @@ const COUNTRIES = [
   { code: "CM", name: "Cameroon", currency: "XAF" },
   { code: "SS", name: "South Sudan", currency: "SSP" },
   { code: "CD", name: "DR Congo", currency: "CDF" },
+  { code: "INT", name: "International", currency: "USD" }, // Added International
 ];
 
 export const getFinanceOverview = query({
@@ -23,10 +24,7 @@ export const getFinanceOverview = query({
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
-    // Removed the strict "deposit" filter so legacy test data shows up
-    const allPayments = await ctx.db
-      .query("payments")
-      .collect();
+    const allPayments = await ctx.db.query("payments").collect();
       
     const allUsers = await ctx.db.query("users").collect();
     const userMap = new Map(allUsers.map((u) => [u._id, u]));
@@ -35,7 +33,6 @@ export const getFinanceOverview = query({
     const completedTx = allPayments.filter((p) => p.status === "paid").length;
     const successRate = totalTx > 0 ? Math.round((completedTx / totalTx) * 100) : 0;
 
-    // Group by country
     const countryStats: Record<string, { volume: number; txCount: number }> = {};
     COUNTRIES.forEach((c) => {
       countryStats[c.code] = { volume: 0, txCount: 0 };
@@ -52,7 +49,6 @@ export const getFinanceOverview = query({
       }
     }
 
-    // Only return countries with actual transaction activity
     const countryBreakdown = COUNTRIES.map((c) => ({
       ...c,
       volume: countryStats[c.code].volume,
@@ -81,13 +77,7 @@ export const getCountryDeposits = query({
     const countryUsers = new Set(allUsers.filter((u) => u.country === countryCode).map((u) => u._id));
     const userMap = new Map(allUsers.map((u) => [u._id, u]));
 
-    // Removed the strict "deposit" filter here as well
-    let deposits = await ctx.db
-      .query("payments")
-      .order("desc")
-      .collect();
-
-    // Filter by selected country
+    let deposits = await ctx.db.query("payments").order("desc").collect();
     deposits = deposits.filter((d) => countryUsers.has(d.userId));
 
     const totalTx = deposits.length;
@@ -95,12 +85,10 @@ export const getCountryDeposits = query({
     const volume = deposits.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
     const successRate = totalTx > 0 ? Math.round((completedTx / totalTx) * 100) : 0;
 
-    // Apply Status Filter
     if (status && status !== "all") {
       deposits = deposits.filter((d) => d.status === status);
     }
 
-    // Apply Search Filter
     if (search) {
       const s = search.toLowerCase();
       deposits = deposits.filter((d) => {
@@ -140,4 +128,59 @@ export const getCountryDeposits = query({
       items,
     };
   },
+});
+
+// --------------------------------------------------------
+// NEW: Calculate Management Profits per Country
+// --------------------------------------------------------
+export const getManagementProfits = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+
+    // Get all successful deposits and all earnings payouts
+    const allPayments = await ctx.db.query("payments").filter(q => q.eq(q.field("status"), "paid")).collect();
+    const allEarnings = await ctx.db.query("earnings").collect();
+    const allUsers = await ctx.db.query("users").collect();
+    const userMap = new Map(allUsers.map((u) => [u._id, u]));
+
+    const profitStats: Record<string, { revenue: number; payouts: number; profit: number }> = {};
+    COUNTRIES.forEach((c) => {
+      profitStats[c.code] = { revenue: 0, payouts: 0, profit: 0 };
+    });
+
+    // 1. Calculate Total Revenue (Deposits) per country
+    for (const p of allPayments) {
+      const u = userMap.get(p.userId);
+      const cCode = u?.country || "KE";
+      if (profitStats[cCode]) {
+        profitStats[cCode].revenue += p.amount;
+      }
+    }
+
+    // 2. Calculate Total Expenses (L1, L2, L3 Payouts) per country
+    for (const e of allEarnings) {
+      // Only count referral commissions as expenses against the activation fee
+      if (["level_1", "level_2", "level_3"].includes(e.source)) {
+        // Use the sourceCountry (the country where the fee originated)
+        const cCode = e.sourceCountry || "KE";
+        if (profitStats[cCode]) {
+          profitStats[cCode].payouts += e.amount;
+        }
+      }
+    }
+
+    // 3. Map into the final array and remove countries with zero activity
+    const countryProfits = COUNTRIES.map((c) => {
+      const stats = profitStats[c.code];
+      return {
+        ...c,
+        revenue: stats.revenue,
+        payouts: stats.payouts,
+        profit: stats.revenue - stats.payouts,
+      };
+    }).filter((c) => c.revenue > 0 || c.payouts > 0); 
+
+    return countryProfits;
+  }
 });

@@ -21,8 +21,20 @@ export default function DepositsAnalyticsPage() {
 // --- VIEW 1: GLOBAL OVERVIEW ---
 function GlobalOverview({ onSelectCountry }: { onSelectCountry: (code: string) => void }) {
   const data = useQuery(api.adminDeposits.getFinanceOverview);
+  const profitData = useQuery(api.adminDeposits.getManagementProfits);
 
-  if (data === undefined) return <div className="font-bold text-[#112a46]">Loading Analytics...</div>;
+  if (data === undefined || profitData === undefined) {
+    return <div className="font-bold text-[#112a46]">Loading Analytics...</div>;
+  }
+
+  // Calculate total global profit strictly in KES
+ // Calculate total global profit strictly in KES
+  const totalGlobalProfitKES = profitData.reduce((sum, c: any) => {
+    return sum + (c.profitInKES || 0); 
+  }, 0);
+
+  // Map profits by country code for easy lookup in the cards
+  const profitMap = new Map(profitData.map((p: any) => [p.code, p]));
 
   return (
     <>
@@ -30,7 +42,8 @@ function GlobalOverview({ onSelectCountry }: { onSelectCountry: (code: string) =
         <h1 className="text-2xl font-bold text-[#112a46]">Finance Analytics</h1>
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Top Level Metrics - Expanded to 3 columns */}
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex justify-between items-start">
             <p className="text-sm font-medium text-gray-500">Total Transactions</p>
@@ -48,33 +61,55 @@ function GlobalOverview({ onSelectCountry }: { onSelectCountry: (code: string) =
           <h2 className="mt-2 text-3xl font-extrabold text-[#112a46]">{data.successRate}%</h2>
           <p className="mt-1 text-xs text-gray-400">Overall conversion</p>
         </div>
+
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-6 shadow-sm">
+          <div className="flex justify-between items-start">
+            <p className="text-sm font-bold text-emerald-700">Total Net Profit</p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">💰</span>
+          </div>
+          <h2 className="mt-2 text-3xl font-extrabold text-emerald-700">
+            KES {totalGlobalProfitKES.toLocaleString()}
+          </h2>
+          <p className="mt-1 text-xs text-emerald-600">Converted exactly from all regions</p>
+        </div>
       </div>
 
       <h3 className="mb-4 font-bold text-[#112a46]">Country Performance Overview</h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {data.countryBreakdown.map((c) => (
-          <div key={c.code} className="flex flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="flex justify-between items-center mb-4">
-              <span className="font-bold text-gray-600">{c.name}</span>
-              <span className="rounded bg-[#1abc9c]/10 px-2 py-1 text-[10px] font-bold text-[#1abc9c]">Active</span>
+        {data.countryBreakdown.map((c) => {
+          const cProfit = profitMap.get(c.code);
+          
+          return (
+            <div key={c.code} className="flex flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-bold text-gray-600">{c.name}</span>
+                <span className="rounded bg-[#1abc9c]/10 px-2 py-1 text-[10px] font-bold text-[#1abc9c]">Active</span>
+              </div>
+              
+              <h4 className="text-xl font-extrabold text-[#1abc9c]">
+                {c.currency} {c.volume >= 1000 ? (c.volume/1000).toFixed(1) + 'k' : c.volume.toLocaleString()}
+              </h4>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-4">Total Volume</p>
+              
+              <div className="mb-4 rounded-lg bg-gray-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Management Profit</p>
+                <p className="font-black text-emerald-600">
+                  {c.currency} {cProfit ? cProfit.profit.toLocaleString() : 0}
+                </p>
+              </div>
+
+              <p className="font-bold text-[#112a46]">{c.txCount}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-6">Transactions</p>
+              
+              <button 
+                onClick={() => onSelectCountry(c.code)}
+                className="mt-auto w-full rounded-xl border border-gray-200 py-2.5 text-sm font-bold text-gray-600 transition hover:bg-gray-50 hover:text-[#112a46]"
+              >
+                View Details
+              </button>
             </div>
-            
-            <h4 className="text-xl font-extrabold text-[#1abc9c]">
-              {c.currency} {c.volume >= 1000 ? (c.volume/1000).toFixed(1) + 'k' : c.volume.toLocaleString()}
-            </h4>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-4">Total Volume</p>
-            
-            <p className="font-bold text-[#112a46]">{c.txCount}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-6">Transactions</p>
-            
-            <button 
-              onClick={() => onSelectCountry(c.code)}
-              className="mt-auto w-full rounded-xl border border-gray-200 py-2.5 text-sm font-bold text-gray-600 transition hover:bg-gray-50 hover:text-[#112a46]"
-            >
-              View Details
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );

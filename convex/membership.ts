@@ -6,7 +6,6 @@ import { PROVIDER_BY_COUNTRY } from "./payments/routing";
 import { requireAdmin } from "./access";
 import { distributeCommissions } from "./affiliate";
 
-// What the membership page needs to show
 export const status = query({
   args: {},
   handler: async (ctx) => {
@@ -44,7 +43,6 @@ export const getPayment = query({
   },
 });
 
-// ---------- Admin "door": set the activation amount per country ----------
 export const adminPrices = query({
   args: {},
   handler: async (ctx) => {
@@ -67,7 +65,7 @@ export const adminPrices = query({
 export const setPrice = mutation({
   args: { country: v.string(), amount: v.number() },
   handler: async (ctx, { country, amount }) => {
-    const admin = await requireAdmin(ctx); // checked on the server
+    const admin = await requireAdmin(ctx);
     const c = COUNTRIES.find((x) => x.code === country);
     if (!c) throw new ConvexError("Unknown country.");
     if (!Number.isInteger(amount) || amount < 1 || amount > 10_000_000) {
@@ -90,7 +88,6 @@ export const setPrice = mutation({
   },
 });
 
-// ---------- Payment steps (internal) ----------
 export const createPending = internalMutation({
   args: { userId: v.id("users"), phone: v.string() },
   handler: async (ctx, { userId, phone }) => {
@@ -200,17 +197,28 @@ export const applyMpesaResult = internalMutation({
       receipt: a.receipt,
       resultDesc: a.resultDesc,
     });
+
+    // If it is a wallet deposit, credit balance directly without triggering membership commission trees
+    if (payment.purpose === "deposit") {
+      await ctx.db.insert("earnings", {
+        userId: payment.userId,
+        amount: payment.amount,
+        currency: payment.currency,
+        source: "deposit",
+      });
+      return;
+    }
+
+    // Default Membership flow: activate account and distribute upline commissions
     await ctx.db.patch(payment.userId, {
       membership: "active",
       membershipPaidAt: Date.now(),
     });
 
-    // Credit Level 1, 2, and 3 uplines on M-Pesa activation!
     await distributeCommissions(ctx, payment.userId);
   },
 });
 
-// ---------- Manual Payment Handlers (Uganda, Tanzania, etc.) ----------
 export const submitManualPayment = mutation({
   args: {
     methodTitle: v.string(),

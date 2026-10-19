@@ -39,6 +39,7 @@ async function getToken() {
   return data.access_token as string;
 }
 
+// 1. Existing action: Membership Activation
 export const start = action({
   args: { phone: v.string() },
   handler: async (ctx, { phone }): Promise<{ paymentId: string }> => {
@@ -53,7 +54,7 @@ export const start = action({
 
     try {
       const shortcode = process.env.MPESA_SHORTCODE!;
-      const partyB = process.env.MPESA_PARTYB ?? shortcode; // for a Till: the till number
+      const partyB = process.env.MPESA_PARTYB ?? shortcode;
       const passkey = process.env.MPESA_PASSKEY!;
       const ts = timestamp();
       const token = await getToken();
@@ -99,7 +100,8 @@ export const start = action({
     }
   },
 });
-// Asks Safaricom directly whether the member's latest pending prompt was paid
+
+// 2. Existing action: Direct Status Query
 export const check = action({
   args: {},
   handler: async (ctx): Promise<{ checked: boolean }> => {
@@ -129,20 +131,84 @@ export const check = action({
     });
     const data = await res.json().catch(() => ({}));
 
-    // No result yet: the customer hasn't answered the prompt
     if (data.ResultCode === undefined || data.ResultCode === null) return { checked: false };
     const code = Number(data.ResultCode);
     const desc = String(data.ResultDesc ?? "");
 
-    // 4999 means "still processing". It is NOT a failure, so leave the payment pending.
     if (code === 4999 || /still under processing/i.test(desc)) return { checked: false };
 
     await ctx.runMutation(internal.membership.applyMpesaResult, {
       checkoutRequestId: p.checkoutRequestId,
       resultCode: code,
       resultDesc: desc,
-      amount: p.amount, // the amount we asked Safaricom to charge for this request
+      amount: p.amount,
     });
     return { checked: true };
+  },
+});
+
+// 3. Dedicated action: Automated Wallet Deposit
+export const startDeposit = action({
+  args: { phone: v.string(), amount: v.number() },
+  handler: async (ctx, { phone, amount }): Promise<{ paymentId: string }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Please sign in.");
+    if (amount < 100) throw new ConvexError("Minimum deposit is KES 100.");
+
+    const msisdn = normalizeKenyanPhone(phone);
+    const { paymentId } = await ctx.runMutation(internal.deposit.createPendingMpesaDeposit, {
+      userId,
+      phone: msisdn,
+      amount,
+    });
+
+    try {
+      const shortcode = process.env.MPESA_SHORTCODE!;
+      const partyB = process.env.MPESA_PARTYB ?? shortcode;
+      const passkey = process.env.MPESA_PASSKEY!;
+      const ts = timestamp();
+      const token = await getToken();
+
+      const res = await fetch(`${baseUrl()}/mpesa/stkpush/v1/processrequest`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          BusinessShortCode: shortcode,
+          Password: btoa(`${shortcode}${passkey}${ts}`),
+          Timestamp: ts,
+          TransactionType: process.env.MPESA_TRANSACTION_TYPE ?? "CustomerPayBillOnline",
+          Amount: amount,
+          PartyA: msisdn,
+          PartyB: partyB,
+          PhoneNumber: msisdn,
+          CallBackURL: `${process.env.MPESA_CALLBACK_BASE}/daraja/callback?s=${process.env.MPESA_CALLBACK_SECRET}`,
+          AccountReference: "FlexQash",
+          TransactionDesc: "Wallet Deposit",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.ResponseCode !== "0") {
+        throw new Error(data.errorMessage ?? data.ResponseDescription ?? "STK push rejected");
+      }
+
+      await ctx.runMutation(internal.deposit.attachDepositCheckout, {
+        paymentId,
+        checkoutRequestId: data.CheckoutRequestID,
+        merchantRequestId: data.MerchantRequestID,
+      });
+
+      return { paymentId };
+    } catch (e) {
+      console.error("STK push deposit failed:", e);
+      await ctx.runMutation(internal.membership.markFailed, {
+        paymentId,
+        reason: "Could not start M-Pesa prompt for deposit",
+      });
+      throw new ConvexError("Could not send M-Pesa deposit prompt. Please try again.");
+    }
   },
 });
