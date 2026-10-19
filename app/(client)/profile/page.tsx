@@ -62,7 +62,7 @@ export default function ProfilePage() {
             <div className="rounded-xl bg-gray-50 p-4 border border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Country</p>
               <p className="font-bold text-[#112a46] flex items-center gap-2">
-                <span className={`fi fi-${profile.country.toLowerCase()} rounded-sm drop-shadow-sm`} />
+                <span className={`fi fi-${profile.country?.toLowerCase() ?? 'ke'} rounded-sm drop-shadow-sm`} />
                 {profile.country}
               </p>
             </div>
@@ -72,9 +72,15 @@ export default function ProfilePage() {
               <p className="font-bold text-[#1abc9c]">@{profile.invitedBy}</p>
             </div>
 
-            <div className="rounded-xl bg-gray-50 p-4 border border-gray-100 md:col-span-2">
+            <div className="rounded-xl bg-gray-50 p-4 border border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Member Since</p>
               <p className="font-bold text-[#112a46]">{new Date(profile.joinDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            {/* NEW: Total Referrals Card */}
+            <div className="rounded-xl bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20">
+              <p className="text-xs font-bold text-[#1abc9c] uppercase tracking-wider mb-1">Total Referrals</p>
+              <p className="text-2xl font-black text-[#112a46]">{profile.referralCount ?? 0}</p>
             </div>
           </div>
         </div>

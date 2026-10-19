@@ -40,6 +40,7 @@ import type * as serviceWithdrawals from "../serviceWithdrawals.js";
 import type * as team from "../team.js";
 import type * as users from "../users.js";
 import type * as withdrawals from "../withdrawals.js";
+import type * as youtube from "../youtube.js";
 
 import type {
   ApiFromModules,
@@ -80,6 +81,7 @@ declare const fullApi: ApiFromModules<{
   team: typeof team;
   users: typeof users;
   withdrawals: typeof withdrawals;
+  youtube: typeof youtube;
 }>;
 
 /**

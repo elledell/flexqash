@@ -33,11 +33,18 @@ export const getProfile = query({
 
     let inviterUsername = "None";
     if (user.invitedBy) {
+      // Because invitedBy stores the Convex ID, we can get the inviter directly
       const inviter = await ctx.db.get(user.invitedBy);
       if (inviter) {
         inviterUsername = inviter.username || inviter.name || "Unknown";
       }
     }
+
+    // Count Level 1 (Direct) Referrals
+    const directReferrals = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("invitedBy"), userId))
+      .collect();
 
     return {
       name: user.name || "N/A",
@@ -48,6 +55,7 @@ export const getProfile = query({
       invitedBy: inviterUsername,
       status: user.membership === "active" ? "Active" : "Inactive",
       joinDate: user._creationTime,
+      referralCount: directReferrals.length, // Added the dynamic count
     };
   },
 });
