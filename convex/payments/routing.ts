@@ -9,9 +9,9 @@ export const PROVIDER_BY_COUNTRY: Record<string, Provider> = {
   ZM: "manual",     // Zambia manual mobile money
   SS: "manual",     // South Sudan manual mobile money
   BW: "manual",     // Botswana manual mobile money
-  INT: "manual",    // International (Binance) uses manual verification
-  GH: "selar",      // Ghana uses Selar link
+  GH: "manual", // Ensure this says "manual" instead of "selar"
+  CM: "selar",  // Ensure Cameroon is set to "selar"
+  INT: "manual",      // Ghana uses Selar link
   NG: "selar",      // Nigeria uses Selar link
-  CM: "manual",     // Cameroon (Coming soon - fallback to manual)
   RW: "manual",     // Rwanda (Coming soon - fallback to manual)
 };

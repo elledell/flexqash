@@ -2,7 +2,6 @@
 
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { ConvexError } from "convex/values";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
@@ -24,11 +23,11 @@ export default function MembershipPage() {
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   
-  // NEW STATE: Tracks when a user clicks the Selar link
   const [clickedSelarId, setClickedSelarId] = useState<string | null>(null);
   
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -36,7 +35,7 @@ export default function MembershipPage() {
     if (status?.active) router.replace("/dashboard");
   }, [isLoading, isAuthenticated, status, router]);
 
-  if (!status || !transactions) return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  if (!status || !transactions) return <div className="flex min-h-screen items-center justify-center font-bold text-[#112a46]">Loading...</div>;
 
   const countryCode = status.provider === "mpesa" ? "KE" : (status as any).country ?? "UG";
   const instructions = PAYMENT_INSTRUCTIONS[countryCode] ?? { type: "coming_soon", methods: [] };
@@ -49,12 +48,20 @@ export default function MembershipPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Helper function to cleanly extract Convex backend errors without the ugly prefixes
+  const parseError = (e: any) => {
+    if (e?.data) return String(e.data);
+    const msg = e?.message || "";
+    return msg.replace(/^Uncaught Error: ConvexError: /, '').replace(/^ConvexError: /, '') || "An error occurred.";
+  };
+
   const handleManualSubmit = async () => {
     if (!phone) {
       setError("Please enter the phone number used to pay.");
       return;
     }
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       await submitManual({
@@ -64,33 +71,37 @@ export default function MembershipPage() {
       });
       setPhone("");
       setTransactionId("");
-    } catch (e) {
-      setError(e instanceof ConvexError ? String(e.data) : "Failed to record payment.");
+      setSuccess("Payment submitted! Awaiting admin approval.");
+    } catch (e: any) {
+      setError(parseError(e));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // Dedicated submit handler for Selar 
   const handleSelarSubmit = async () => {
     if (!transactionId) {
       setError("Please paste the confirmation message to request activation.");
       return;
     }
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       await submitManual({
         methodTitle: "Selar Payment",
-        phone: phone || "N/A", // Optional for Selar, but required by DB
+        phone: phone || "N/A", 
         transactionId: transactionId,
       });
       setPhone("");
       setTransactionId("");
       setClickedSelarId(null);
-    } catch (e) {
-      setError(e instanceof ConvexError ? String(e.data) : "Failed to submit activation request.");
+      setSuccess("Payment submitted! Awaiting admin approval.");
+    } catch (e: any) {
+      setError(parseError(e));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -125,20 +136,26 @@ export default function MembershipPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                
+                {error && <p className="text-xs font-bold text-red-600">{error}</p>}
+                {success && <p className="text-xs font-bold text-emerald-600">{success}</p>}
+                
                 <button
                   disabled={loading || !phone}
                   onClick={async () => {
                     setLoading(true);
                     setError("");
+                    setSuccess("");
                     try {
                       await startMpesa({ phone });
+                      setSuccess("Prompt sent! Please check your phone to complete payment.");
                     } catch (e: any) {
-                      setError(e?.message ?? "Failed to send M-Pesa STK push");
+                      setError(parseError(e));
+                    } finally {
+                      setLoading(false);
                     }
-                    setLoading(false);
                   }}
-                  className="w-full rounded-xl bg-[#1abc9c] py-3 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
+                  className="w-full rounded-xl bg-[#1abc9c] py-3 text-center font-bold text-white shadow transition hover:bg-[#16a085] disabled:opacity-50"
                 >
                   {loading ? "Sending prompt..." : "Pay with M-Pesa"}
                 </button>
@@ -171,7 +188,7 @@ export default function MembershipPage() {
 
                     <h3 className="font-bold text-[#1abc9c]">{selectedMethod.title}</h3>
 
-                    <div className="rounded-lg bg-gray-50 p-4">
+                    <div className="rounded-lg bg-gray-50 p-4 border border-gray-100">
                       <ol className="space-y-2 text-sm font-medium text-[#112a46]">
                         {selectedMethod.steps.map((step, idx) => (
                           <li key={idx} className="flex items-center gap-2 leading-relaxed">
@@ -192,11 +209,11 @@ export default function MembershipPage() {
 
                     <div className="space-y-4 pt-2">
                       <div>
-                        <label className="block text-sm font-semibold text-[#112a46]">
-                          Enter number you used to pay below and press confirm:
+                        <label className="block text-sm font-semibold text-[#112a46] mb-1">
+                          Enter number you used to pay below:
                         </label>
                         <input
-                          className={`${inputClass} mt-2 w-full rounded-lg border-gray-300 px-4 py-3`}
+                          className={inputClass}
                           placeholder="e.g. 07XXXXXXXX"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
@@ -204,11 +221,11 @@ export default function MembershipPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-semibold text-[#112a46]">
+                        <label className="block text-sm font-semibold text-[#112a46] mb-1">
                           Transaction Message (Optional):
                         </label>
                         <textarea
-                          className={`${inputClass} mt-2 w-full rounded-lg border-gray-300 px-4 py-3 h-20 resize-none`}
+                          className={`${inputClass} h-20 resize-none`}
                           placeholder="Paste the confirmation message..."
                           value={transactionId}
                           onChange={(e) => setTransactionId(e.target.value)}
@@ -216,12 +233,13 @@ export default function MembershipPage() {
                       </div>
                     </div>
 
-                    {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+                    {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
+                    {success && <p className="text-sm text-emerald-600 font-bold">{success}</p>}
 
                     <button
                       onClick={handleManualSubmit}
                       disabled={loading}
-                      className="w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
+                      className="w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085] disabled:opacity-50"
                     >
                       {loading ? "Submitting..." : "Confirm and Go to Dashboard"}
                     </button>
@@ -271,9 +289,9 @@ export default function MembershipPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-[#112a46]">Phone Number (Optional)</label>
+                      <label className="block text-sm font-semibold text-[#112a46] mb-1">Phone Number (Optional)</label>
                       <input
-                        className={`${inputClass} mt-1 w-full rounded-lg border-gray-300 px-4 py-3`}
+                        className={inputClass}
                         placeholder="e.g. 07XXXXXXXX"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
@@ -281,16 +299,17 @@ export default function MembershipPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-[#112a46]">Selar Confirmation Message</label>
+                      <label className="block text-sm font-semibold text-[#112a46] mb-1">Selar Confirmation Message</label>
                       <textarea
-                        className={`${inputClass} mt-1 w-full rounded-lg border-gray-300 px-4 py-3 h-24 resize-none`}
+                        className={`${inputClass} h-24 resize-none`}
                         placeholder="Paste the SMS or Email receipt text here..."
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
                       />
                     </div>
                     
-                    {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+                    {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
+                    {success && <p className="text-sm text-emerald-600 font-bold">{success}</p>}
                     
                     <button
                       onClick={handleSelarSubmit}
@@ -344,7 +363,7 @@ export default function MembershipPage() {
                       <td className="py-3">{tx.phone}</td>
                       <td className="py-3">
                         <span
-                          className={`rounded px-2 py-1 text-xs font-bold ${
+                          className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                             tx.status === "paid"
                               ? "bg-emerald-100 text-emerald-700"
                               : tx.status === "pending"

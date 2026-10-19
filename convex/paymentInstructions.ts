@@ -232,15 +232,25 @@ export const PAYMENT_INSTRUCTIONS: Record<string, CountryInstruction> = {
       },
     ],
   },
-  GH: {
-    type: "selar",
+GH: {
+    type: "manual",
     methods: [
       {
-        id: "selar",
-        title: "Pay via Selar (Ghana)",
-        buttonLabel: "Pay with Mobile Money / Card",
-        selarUrl: "https://selar.com/qo87t1s221?currency=GHS",
-        steps: [],
+        id: "eversend",
+        title: "PAY VIA EVERSEND (GHANA)",
+        buttonLabel: "Pay with Eversend",
+        copyableCode: "https://eversend.me/lionizer254",
+        copyableLabel: "Eversend Link",
+        steps: [
+          "Copy and open this link in your browser: https://eversend.me/lionizer254",
+          "Select your country Then Enter Amount 89",
+          "Enter Your Two Names",
+          "On Note Enter Your Username",
+          "Tap Continue",
+          "Enter Number To Pay With",
+          "Choose How To receive Code",
+          "Tap Continue Then Tap Make PAYMENT",
+        ],
       },
     ],
   },
@@ -256,30 +266,39 @@ export const PAYMENT_INSTRUCTIONS: Record<string, CountryInstruction> = {
       },
     ],
   },
-  INT: {
+INT: {
     type: "manual",
     methods: [
       {
         id: "binance",
         title: "PAY VIA BINANCE",
         buttonLabel: "Pay with Binance",
-        copyableCode: "PENDING_BINANCE_PAY_ID",
+        copyableCode: "0xf02200000b74e254d138ca6fb349fda11188feae",
         copyableLabel: "Binance Pay ID",
         steps: [
           "Open your Binance App",
           "Go to Binance Pay",
           "Select 'Send' and choose Pay ID",
-          "Enter Pay ID: (Pending)",
-          "Enter the equivalent USD amount",
+          "Enter Pay ID: 0xf02200000b74e254d138ca6fb349fda11188feae",
+          "Enter your required USD amount",
           "Confirm the payment",
         ],
       },
     ],
   },
-  CM: {
-    type: "coming_soon",
-    methods: [],
+CM: {
+    type: "selar",
+    methods: [
+      {
+        id: "selar",
+        title: "Pay via Selar (Cameroon)",
+        buttonLabel: "Pay with Mobile Money / Card",
+        selarUrl: "https://selar.com/qo87t1s221?currency=XAF",
+        steps: [],
+      },
+    ],
   },
+  
   RW: {
     type: "coming_soon",
     methods: [],
