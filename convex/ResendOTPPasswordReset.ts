@@ -13,7 +13,7 @@ export const ResendOTPPasswordReset = Resend({
   async sendVerificationRequest({ identifier: email, provider, token }) {
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
-      from: "FlexQash <onboarding@resend.dev>",
+      from: "FlexQash <support@send.flexqash.com>",
       to: [email],
       subject: "Reset your FlexQash password",
       text: `Your FlexQash password reset code is ${token}. It expires soon. If you didn't ask for this, ignore this email.`,

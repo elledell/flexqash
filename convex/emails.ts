@@ -3,7 +3,7 @@ import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
 
 // Using the Resend testing email until your flexqash.com domain is verified
-const SENDER_EMAIL = "FlexQash <onboarding@resend.dev>"; 
+const SENDER_EMAIL = "FlexQash <support@send.flexqash.com>"; 
 
 export const sendActivationEmail = internalAction({
   args: { email: v.string(), name: v.string() },
