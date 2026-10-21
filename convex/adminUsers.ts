@@ -177,3 +177,52 @@ export const approveUserManually = mutation({
     return { success: true };
   }
 });
+
+// Update a user's uplink (who referred them)
+export const updateUplink = mutation({
+  args: {
+    userId: v.id("users"),
+    newUplineUsername: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const cleanUsername = args.newUplineUsername.trim().toLowerCase();
+
+    // If admin passes an empty string, we remove the uplink entirely
+    if (!cleanUsername) {
+      await ctx.db.patch(args.userId, { invitedBy: undefined });
+      return { success: true };
+    }
+
+    // Find the new sponsor by username (case-insensitive fallback)
+    const allUsers = await ctx.db.query("users").collect();
+    const newUpline = allUsers.find((u) => (u.username || "").toLowerCase() === cleanUsername);
+
+    if (!newUpline) {
+      throw new ConvexError(`We could not find any user with the username '${args.newUplineUsername}'.`);
+    }
+
+    if (newUpline._id === args.userId) {
+      throw new ConvexError("A user cannot be their own sponsor.");
+    }
+
+    // Update the target user's invitedBy field to point to the new sponsor
+    await ctx.db.patch(args.userId, { invitedBy: newUpline._id });
+
+    return { success: true };
+  }
+});
+
+// Delete a user account permanently
+export const deleteUser = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    
+    // Deletes the user record from the database
+    await ctx.db.delete(args.userId);
+    
+    return { success: true };
+  }
+});

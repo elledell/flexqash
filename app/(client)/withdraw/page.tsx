@@ -29,6 +29,9 @@ export default function WithdrawPage() {
 
   const numAmount = parseFloat(amount) || 0;
   const feeDetails = calculateWithdrawalFee(info.country, numAmount);
+  
+  // New Math: Fee is added to the requested amount
+  const totalDeduction = numAmount > 0 ? numAmount + feeDetails.fee : 0;
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +42,12 @@ export default function WithdrawPage() {
       setError(`Minimum withdrawal is ${info.currency} ${feeDetails.minWithdrawal.toLocaleString()}`);
       return;
     }
-    if (numAmount > info.availableBalance) {
-      setError("Insufficient available balance.");
+    
+    if (totalDeduction > info.availableBalance) {
+      setError(`Insufficient balance. You need ${info.currency} ${totalDeduction.toLocaleString()} (including fee).`);
       return;
     }
+    
     if (!info.phone || !recipientName.trim()) {
       setError("Please ensure your profile has a phone number and provide the recipient's full name.");
       return;
@@ -145,7 +150,7 @@ export default function WithdrawPage() {
 
             <div>
               <label className="mb-1 block text-sm font-bold text-gray-600">
-                Amount ({info.currency})
+                Amount to Receive ({info.currency})
               </label>
               <input
                 type="number"
@@ -162,17 +167,23 @@ export default function WithdrawPage() {
 
             {/* Live Fee & Net Breakdown */}
             {numAmount > 0 && (
-              <div className="rounded-xl border border-gray-100 bg-[#f4f7fb] p-4 text-sm font-medium text-[#112a46] space-y-1">
+              <div className="rounded-xl border border-gray-100 bg-[#f4f7fb] p-4 text-sm font-medium text-[#112a46] space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Deduction / Commission Fee:</span>
+                  <span className="text-gray-500">Requested Payout:</span>
+                  <span className="font-bold text-[#1abc9c]">
+                    {info.currency} {numAmount.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Transaction Fee:</span>
                   <span className="font-bold text-red-500">
-                    - {info.currency} {feeDetails.fee.toLocaleString()}
+                    + {info.currency} {feeDetails.fee.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-gray-200 pt-2 font-bold">
-                  <span>Net Amount Sent to You:</span>
-                  <span className="text-[#1abc9c]">
-                    {info.currency} {feeDetails.netAmount.toLocaleString()}
+                  <span>Total Deduction from Wallet:</span>
+                  <span className="text-red-500">
+                    - {info.currency} {totalDeduction.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -210,9 +221,9 @@ export default function WithdrawPage() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-gray-50 text-[#112a46]">
               <tr>
-                <th className="px-6 py-4 font-extrabold uppercase text-xs">Amount</th>
+                <th className="px-6 py-4 font-extrabold uppercase text-xs">Total Deducted</th>
                 <th className="px-6 py-4 font-extrabold uppercase text-xs">Fee</th>
-                <th className="px-6 py-4 font-extrabold uppercase text-xs">Net Sent</th>
+                <th className="px-6 py-4 font-extrabold uppercase text-xs">Net Received</th>
                 <th className="px-6 py-4 font-extrabold uppercase text-xs">Status</th>
                 <th className="px-6 py-4 font-extrabold uppercase text-xs">Date</th>
               </tr>
@@ -221,8 +232,8 @@ export default function WithdrawPage() {
               {history.length > 0 ? (
                 history.map((tx) => (
                   <tr key={tx._id} className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-bold text-[#112a46]">
-                      {tx.currency} {tx.amount.toLocaleString()}
+                    <td className="px-6 py-4 font-bold text-red-500">
+                      - {tx.currency} {tx.amount.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-xs font-semibold text-gray-400">
                       {tx.currency} {tx.fee.toLocaleString()}

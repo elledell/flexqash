@@ -81,8 +81,8 @@ export async function distributeCommissions(
           // Hardcoded KES baseline for foreigners referring Malawians
           const MALAWI_FOREIGNER_EXCEPTION_KES = {
             l1: 150,
-            l2: 80,
-            l3: 50,
+            l2: 70,
+            l3: 30,
           };
           const exceptionBaseInKES = MALAWI_FOREIGNER_EXCEPTION_KES[level.tierKey];
           

@@ -23,7 +23,7 @@ export const getWithdrawalInfo = query({
       .collect();
     const totalEarnings = earnings.reduce((sum, e) => sum + e.amount, 0);
 
-    // Sum pending and approved withdrawals (includes internal deductions for accurate balance)
+    // Sum pending and approved withdrawals
     const withdrawals = await ctx.db
       .query("withdrawals")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -35,7 +35,7 @@ export const getWithdrawalInfo = query({
 
     const totalWithdrawn = withdrawals
       .filter((w) => w.status === "approved")
-      .reduce((sum, w) => sum + w.amount, 0);
+      .reduce((sum, w) => sum + w.netAmount, 0); // User received the netAmount
 
     const availableBalance = Math.max(0, totalEarnings - reservedOrPaid);
 
@@ -52,7 +52,7 @@ export const getWithdrawalInfo = query({
 
 export const requestWithdrawal = mutation({
   args: {
-    amount: v.number(),
+    amount: v.number(), // The exact amount they want to receive
     recipientPhone: v.string(),
     recipientName: v.string(),
     method: v.string(),
@@ -76,6 +76,9 @@ export const requestWithdrawal = mutation({
       );
     }
 
+    // M-Pesa Style: Fee is added to the requested amount
+    const totalDeduction = amount + feeInfo.fee;
+
     // Check available balance
     const earnings = await ctx.db
       .query("earnings")
@@ -93,21 +96,32 @@ export const requestWithdrawal = mutation({
       .reduce((sum, w) => sum + w.amount, 0);
 
     const availableBalance = totalEarnings - reservedOrPaid;
-    if (amount > availableBalance) {
+    if (totalDeduction > availableBalance) {
       throw new ConvexError(
-        `Insufficient balance. Your available balance is ${feeInfo.currency} ${availableBalance.toLocaleString()}`
+        `Insufficient balance. You need ${feeInfo.currency} ${totalDeduction.toLocaleString()} (including fee) but only have ${availableBalance.toLocaleString()}`
       );
     }
 
     const withdrawalId = await ctx.db.insert("withdrawals", {
       userId,
-      amount,
+      amount: totalDeduction, // Gross amount deducted from balance
       fee: feeInfo.fee,
-      netAmount: feeInfo.netAmount,
+      netAmount: amount, // Exact amount sent to user
       currency: feeInfo.currency,
       status: "pending",
       method,
       paymentDetails: JSON.stringify({ recipientPhone, recipientName }),
+    });
+
+    // 📩 FIRE THE ADMIN ALERT EMAIL
+    await ctx.scheduler.runAfter(0, internal.emails.sendAdminWithdrawAlert, {
+      adminEmails: ["lionizer254@gmail.com", "hellenmochama6@gmail.com"],
+      userName: user.name || user.username || "Unknown Member",
+      userPhone: recipientPhone,
+      userCountry: country,
+      amount: amount,
+      currency: feeInfo.currency,
+      method: method
     });
 
     return { withdrawalId };
@@ -126,7 +140,6 @@ export const getUserWithdrawals = query({
       .order("desc")
       .collect();
       
-    // Filter out internal system deductions so they do not show in the UI history
     return allWithdrawals
       .filter(
         (w) => 
@@ -202,14 +215,14 @@ export const updateWithdrawalStatus = mutation({
       processedAt: Date.now(),
     });
 
-    // 📩 FIRE THE WITHDRAWAL EMAIL
+    // 📩 FIRE THE WITHDRAWAL APPROVAL EMAIL TO USER
     if (status === "approved") {
       const user = await ctx.db.get(w.userId);
       if (user?.email) {
         await ctx.scheduler.runAfter(0, internal.emails.sendWithdrawalApprovalEmail, {
           email: user.email,
           name: user.name || user.username || "Member",
-          amount: w.amount,
+          amount: w.netAmount, // Send them the exact amount they received
           currency: w.currency,
         });
       }

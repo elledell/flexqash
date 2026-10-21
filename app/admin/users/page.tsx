@@ -17,6 +17,7 @@ export default function UsersManagementPage() {
   const toggleActivation = useMutation(api.adminUsers.toggleActivation);
   const toggleBan = useMutation(api.adminUsers.toggleBan);
   const approveUserManually = useMutation(api.adminUsers.approveUserManually);
+  const deleteUser = useMutation(api.adminUsers.deleteUser);
 
   // Close dropdown when clicking anywhere else on the screen
   useEffect(() => {
@@ -39,6 +40,11 @@ export default function UsersManagementPage() {
       }
       if (action === "unban") {
         await toggleBan({ userId: userId as any, isBanned: false });
+      }
+      if (action === "delete") {
+        const confirmed = window.confirm("⚠️ Are you absolutely sure you want to permanently delete this account? This action cannot be undone.");
+        if (!confirmed) return;
+        await deleteUser({ userId: userId as any });
       }
     } catch (error) {
       console.error("Action failed:", error);
@@ -204,10 +210,19 @@ export default function UsersManagementPage() {
                               🔓 Unban Account
                             </button>
                           ) : (
-                            <button onClick={() => handleAction("ban", user._id)} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-red-600 hover:bg-red-50 transition">
+                            <button onClick={() => handleAction("ban", user._id)} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-orange-600 hover:bg-orange-50 transition">
                               🔨 Ban Account
                             </button>
                           )}
+
+                          {/* DELETE BUTTON */}
+                          <div className="my-1 border-t border-red-100"></div>
+                          <button 
+                            onClick={() => handleAction("delete", user._id)} 
+                            className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-red-600 hover:bg-red-50 transition"
+                          >
+                            🗑️ Delete Account
+                          </button>
                         </div>
                       )}
                     </td>
@@ -240,6 +255,28 @@ export default function UsersManagementPage() {
 // --- NETWORK VIEW COMPONENT ---
 function UserNetworkView({ userId }: { userId: string }) {
   const network = useQuery(api.adminUsers.getUserNetwork, { userId: userId as any });
+  const updateUplink = useMutation(api.adminUsers.updateUplink);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdate = async () => {
+    setIsUpdating(true);
+    try {
+      await updateUplink({ 
+        userId: userId as any, 
+        newUplineUsername: newUsername 
+      });
+      setIsEditing(false);
+      setNewUsername("");
+    } catch (error) {
+      console.error("Uplink update failed:", error);
+      alert(error instanceof ConvexError ? error.data : "Failed to update uplink.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (network === undefined) return <div className="text-sm text-gray-500 text-center py-8">Loading network...</div>;
   if (!network) return null;
@@ -248,9 +285,35 @@ function UserNetworkView({ userId }: { userId: string }) {
     <div className="space-y-6">
       {/* UPLINK */}
       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-        <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">Referred By (Uplink)</h4>
-        {network.upline ? (
-          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400">Referred By (Uplink)</h4>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className="text-xs font-bold text-[#3498db] hover:underline"
+          >
+            {isEditing ? "Cancel" : "✏️ Edit"}
+          </button>
+        </div>
+
+        {isEditing ? (
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
+            <input 
+              type="text" 
+              placeholder="Enter new sponsor's username..."
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+              className="w-full bg-transparent px-2 py-1 text-sm outline-none"
+            />
+            <button 
+              onClick={handleUpdate}
+              disabled={isUpdating}
+              className="rounded bg-[#112a46] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#1a3a5e] disabled:opacity-50"
+            >
+              {isUpdating ? "Saving..." : "Save"}
+            </button>
+          </div>
+        ) : network.upline ? (
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition">
             <div className="flex items-center gap-3">
               <span className={`fi fi-${network.upline.country.toLowerCase()} rounded-sm text-xl shadow-sm`} />
               <span className="font-bold text-[#112a46]">{network.upline.name}</span>
@@ -261,6 +324,10 @@ function UserNetworkView({ userId }: { userId: string }) {
           </div>
         ) : (
           <p className="text-sm font-medium text-gray-500">Joined organically (No referrer)</p>
+        )}
+        
+        {isEditing && (
+          <p className="mt-2 text-[10px] text-gray-400">Leave blank and save to completely remove their sponsor.</p>
         )}
       </div>
 
