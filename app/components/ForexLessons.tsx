@@ -24,7 +24,7 @@ export default function ForexLessons() {
 
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
           <Link
-            href="/sign-up"
+            href="/register"
             className="w-full rounded-md bg-gold-400 px-8 py-3.5 text-base font-bold text-brand-900 shadow transition-colors hover:bg-gold-500 sm:w-auto"
           >
             Create Free Account

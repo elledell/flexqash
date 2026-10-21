@@ -50,10 +50,10 @@ export default function Navbar() {
             Login
           </Link>
           <Link
-            href="/sign-up"
+            href="/register"
             className="rounded-md bg-gold-400 px-5 py-2 text-sm font-bold text-brand-900 shadow transition-colors hover:bg-gold-500"
           >
-            Sign Up
+            Register
           </Link>
         </div>
 
@@ -99,7 +99,7 @@ export default function Navbar() {
               Login
             </Link>
             <Link
-              href="/sign-up"
+              href="/register"
               className="flex-1 rounded-md bg-gold-400 py-2 text-center text-sm font-bold text-brand-900"
             >
               Sign Up

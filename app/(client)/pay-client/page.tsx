@@ -101,7 +101,7 @@ export default function PayClientPage() {
           </Link>
           <p>
             Don't have an account?{" "}
-            <Link href="/sign-up" className="text-[#3498db] transition hover:underline">
+            <Link href="/register" className="text-[#3498db] transition hover:underline">
               Create an Account
             </Link>
           </p>

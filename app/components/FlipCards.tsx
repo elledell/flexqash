@@ -8,7 +8,7 @@ const cards = [
     title: "Referral Earnings",
     blurb: "Invite friends with your unique link and earn on three levels every time they activate.",
     cta: "Start Referring",
-    href: "/sign-up",
+    href: "/register",
     icon: (
       <>
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

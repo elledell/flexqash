@@ -84,7 +84,7 @@ export default function SignInPage() {
       <p className="mt-5 text-center text-sm text-brand-500">
         Don't have an account?{" "}
         <Link href="/sign-in" className="hidden" />
-        <Link href="/sign-up" className="font-bold text-brand-500 underline">Sign Up</Link>
+        <Link href="/register" className="font-bold text-brand-500 underline">Register</Link>
       </p>
     </>
   );
