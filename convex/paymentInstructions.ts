@@ -6,10 +6,11 @@ export interface PaymentMethod {
   copyableLabel?: string;
   steps: string[];
   selarUrl?: string;
+  link?: string;
 }
 
 export interface CountryInstruction {
-  type: "stk" | "manual" | "selar" | "coming_soon";
+  type: "stk" | "manual" | "selar" | "coming_soon" | "eversend";
   methods: PaymentMethod[];
 }
 
@@ -233,24 +234,14 @@ export const PAYMENT_INSTRUCTIONS: Record<string, CountryInstruction> = {
     ],
   },
 GH: {
-    type: "manual",
+    type: "eversend",
     methods: [
       {
         id: "eversend",
-        title: "PAY VIA EVERSEND (GHANA)",
+        title: "Pay via Eversend (Ghana)",
         buttonLabel: "Pay with Eversend",
-        copyableCode: "https://eversend.me/lionizer254",
-        copyableLabel: "Eversend Link",
-        steps: [
-          "Copy and open this link in your browser: https://eversend.me/lionizer254",
-          "Select your country Then Enter Amount 89",
-          "Enter Your Two Names",
-          "On Note Enter Your Username",
-          "Tap Continue",
-          "Enter Number To Pay With",
-          "Choose How To receive Code",
-          "Tap Continue Then Tap Make PAYMENT",
-        ],
+        link: "https://eversend.me/lionizer254",
+        steps: [],
       },
     ],
   },

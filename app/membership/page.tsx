@@ -21,9 +21,12 @@ export default function MembershipPage() {
 
   const [phone, setPhone] = useState("");
   const [transactionId, setTransactionId] = useState("");
+  
+  // For manual steps (like Rwanda)
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   
-  const [clickedSelarId, setClickedSelarId] = useState<string | null>(null);
+  // For external gateways (Selar / Eversend)
+  const [clickedGatewayMethod, setClickedGatewayMethod] = useState<any | null>(null);
   
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -48,13 +51,13 @@ export default function MembershipPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Helper function to cleanly extract Convex backend errors without the ugly prefixes
   const parseError = (e: any) => {
     if (e?.data) return String(e.data);
     const msg = e?.message || "";
     return msg.replace(/^Uncaught Error: ConvexError: /, '').replace(/^ConvexError: /, '') || "An error occurred.";
   };
 
+  // Handler for standard manual steps
   const handleManualSubmit = async () => {
     if (!phone) {
       setError("Please enter the phone number used to pay.");
@@ -79,7 +82,8 @@ export default function MembershipPage() {
     }
   };
 
-  const handleSelarSubmit = async () => {
+  // Handler for external redirect gateways (Selar & Eversend)
+  const handleGatewaySubmit = async () => {
     if (!transactionId) {
       setError("Please paste the confirmation message to request activation.");
       return;
@@ -89,13 +93,13 @@ export default function MembershipPage() {
     setLoading(true);
     try {
       await submitManual({
-        methodTitle: "Selar Payment",
+        methodTitle: clickedGatewayMethod?.title || "External Gateway Payment",
         phone: phone || "N/A", 
         transactionId: transactionId,
       });
       setPhone("");
       setTransactionId("");
-      setClickedSelarId(null);
+      setClickedGatewayMethod(null);
       setSuccess("Payment submitted! Awaiting admin approval.");
     } catch (e: any) {
       setError(parseError(e));
@@ -162,12 +166,12 @@ export default function MembershipPage() {
               </div>
             )}
 
-            {/* 2. MANUAL COUNTRIES */}
+            {/* 2. MANUAL STEP-BY-STEP COUNTRIES */}
             {instructions.type === "manual" && (
               <div className="mt-8 border-t border-gray-100 pt-6">
                 {!selectedMethod ? (
                   <div className="flex flex-col gap-3">
-                    {instructions.methods.map((method) => (
+                    {instructions.methods.map((method: any) => (
                       <button
                         key={method.id}
                         onClick={() => setSelectedMethod(method)}
@@ -190,7 +194,7 @@ export default function MembershipPage() {
 
                     <div className="rounded-lg bg-gray-50 p-4 border border-gray-100">
                       <ol className="space-y-2 text-sm font-medium text-[#112a46]">
-                        {selectedMethod.steps.map((step, idx) => (
+                        {selectedMethod.steps.map((step: any, idx: number) => (
                           <li key={idx} className="flex items-center gap-2 leading-relaxed">
                             <span>{step}</span>
                             {selectedMethod.copyableCode && step.includes(selectedMethod.copyableCode) && (
@@ -261,21 +265,21 @@ export default function MembershipPage() {
               </div>
             )}
 
-            {/* 3. SELAR WITH MESSAGE INPUT */}
-            {instructions.type === "selar" && (
+            {/* 3. EXTERNAL GATEWAYS (SELAR / EVERSEND) */}
+            {(instructions.type === "selar" || instructions.type === "eversend") && (
               <div className="mt-8 border-t border-gray-100 pt-6">
-                {!clickedSelarId ? (
+                {!clickedGatewayMethod ? (
                   <div className="space-y-4 text-center">
                     <p className="text-sm text-gray-600">
-                      Click the button below to pay via Selar. After paying, return to this page to submit your receipt message.
+                      Click the button below to pay. After paying, return to this page to submit your receipt message.
                     </p>
-                    {instructions.methods.map((method) => (
+                    {instructions.methods.map((method: any) => (
                       <a
                         key={method.id}
-                        href={method.selarUrl}
+                        href={method.selarUrl || method.link}
                         target="_blank"
                         rel="noreferrer"
-                        onClick={() => setClickedSelarId(method.id)}
+                        onClick={() => setClickedGatewayMethod(method)}
                         className="block w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
                       >
                         {method.buttonLabel}
@@ -285,21 +289,21 @@ export default function MembershipPage() {
                 ) : (
                   <div className="space-y-4 animate-in fade-in duration-300">
                     <div className="rounded-lg bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20 mb-4 text-sm text-[#112a46]">
-                      <strong>Step 2:</strong> Paste your Selar confirmation message or email receipt below to request activation.
+                      <strong>Step 2:</strong> Paste your confirmation message or email receipt below to request activation.
                     </div>
                     
                     <div>
                       <label className="block text-sm font-semibold text-[#112a46] mb-1">Phone Number (Optional)</label>
                       <input
                         className={inputClass}
-                        placeholder="e.g. 07XXXXXXXX"
+                        placeholder="e.g. +233XXXXXXXXX"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-[#112a46] mb-1">Selar Confirmation Message</label>
+                      <label className="block text-sm font-semibold text-[#112a46] mb-1">Confirmation Message / Receipt</label>
                       <textarea
                         className={`${inputClass} h-24 resize-none`}
                         placeholder="Paste the SMS or Email receipt text here..."
@@ -312,7 +316,7 @@ export default function MembershipPage() {
                     {success && <p className="text-sm text-emerald-600 font-bold">{success}</p>}
                     
                     <button
-                      onClick={handleSelarSubmit}
+                      onClick={handleGatewaySubmit}
                       disabled={loading || !transactionId}
                       className="w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085] disabled:opacity-50"
                     >
@@ -320,7 +324,7 @@ export default function MembershipPage() {
                     </button>
                     
                     <button
-                      onClick={() => setClickedSelarId(null)}
+                      onClick={() => setClickedGatewayMethod(null)}
                       className="mt-2 block w-full text-center text-sm font-semibold text-gray-500 hover:text-gray-700 underline"
                     >
                       Back to payment link

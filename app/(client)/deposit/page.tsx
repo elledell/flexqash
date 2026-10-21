@@ -22,7 +22,9 @@ export default function DepositPage() {
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   
-  const [clickedSelarId, setClickedSelarId] = useState<string | null>(null);
+  // For external gateways (Selar / Eversend)
+  const [clickedGatewayMethod, setClickedGatewayMethod] = useState<any | null>(null);
+  
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -48,7 +50,7 @@ export default function DepositPage() {
       return false;
     }
     return true;
-  };
+  }
 
   const handleMpesaSubmit = async () => {
     if (!phone) return setError("Please enter your M-Pesa phone number.");
@@ -96,7 +98,7 @@ export default function DepositPage() {
     }
   };
 
-  const handleSelarSubmit = async () => {
+  const handleGatewaySubmit = async () => {
     if (!transactionId) return setError("Please paste the confirmation message to verify.");
     if (!validateAmount()) return;
 
@@ -105,7 +107,7 @@ export default function DepositPage() {
     setLoading(true);
     try {
       await submitManual({
-        methodTitle: "Selar/Paystack Deposit",
+        methodTitle: clickedGatewayMethod?.title || "External Gateway Deposit",
         phone: phone || "N/A", 
         amount: Number(amount),
         transactionId,
@@ -113,7 +115,7 @@ export default function DepositPage() {
       setPhone("");
       setAmount("");
       setTransactionId("");
-      setClickedSelarId(null);
+      setClickedGatewayMethod(null);
       setSuccess("Deposit request submitted! Awaiting admin approval.");
     } catch (e) {
       setError(e instanceof ConvexError ? String(e.data) : "Failed to submit deposit request.");
@@ -272,21 +274,21 @@ export default function DepositPage() {
           </div>
         )}
 
-        {/* 3. SELAR COUNTRIES (NG, GH) */}
-        {instructions.type === "selar" && (
+        {/* 3. EXTERNAL GATEWAYS (SELAR / EVERSEND) */}
+        {(instructions.type === "selar" || instructions.type === "eversend") && (
           <div className="mt-8 border-t border-gray-100 pt-6">
-            {!clickedSelarId ? (
+            {!clickedGatewayMethod ? (
               <div className="space-y-4 text-center">
                 <p className="text-sm text-gray-600">
-                  Click the link below to pay via Selar. After completing payment, return here to submit your confirmation receipt.
+                  Click the link below to pay. After completing payment, return here to submit your confirmation receipt.
                 </p>
-                {instructions.methods.map((method) => (
+                {instructions.methods.map((method: any) => (
                   <a
                     key={method.id}
-                    href={method.selarUrl}
+                    href={method.selarUrl || method.link}
                     target="_blank"
                     rel="noreferrer"
-                    onClick={() => setClickedSelarId(method.id)}
+                    onClick={() => setClickedGatewayMethod(method)}
                     className="block w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085]"
                   >
                     {method.buttonLabel}
@@ -296,7 +298,7 @@ export default function DepositPage() {
             ) : (
               <div className="space-y-4 animate-in fade-in duration-300">
                 <div className="rounded-lg bg-[#e0f7fa]/30 p-4 border border-[#1abc9c]/20 mb-4 text-sm text-[#112a46]">
-                  <strong>Step 2:</strong> Paste your Selar confirmation message or email receipt below to record your deposit.
+                  <strong>Step 2:</strong> Paste your confirmation message or email receipt below to record your deposit.
                 </div>
                 
                 <div>
@@ -320,7 +322,7 @@ export default function DepositPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-[#112a46] mb-1">Selar Confirmation Message</label>
+                  <label className="block text-sm font-bold text-[#112a46] mb-1">Confirmation Message / Receipt</label>
                   <textarea
                     className={`${inputClass} h-24 resize-none`}
                     placeholder="Paste the SMS or Email receipt text here..."
@@ -333,7 +335,7 @@ export default function DepositPage() {
                 {success && <p className="text-sm text-[#1abc9c] font-bold">{success}</p>}
                 
                 <button
-                  onClick={handleSelarSubmit}
+                  onClick={handleGatewaySubmit}
                   disabled={loading || !transactionId || !amount}
                   className="w-full rounded-xl bg-[#1abc9c] py-3.5 text-center font-bold text-white shadow transition hover:bg-[#16a085] disabled:opacity-50"
                 >
@@ -341,7 +343,7 @@ export default function DepositPage() {
                 </button>
                 
                 <button
-                  onClick={() => setClickedSelarId(null)}
+                  onClick={() => setClickedGatewayMethod(null)}
                   className="mt-2 block w-full text-center text-sm font-semibold text-gray-500 hover:text-gray-700 underline"
                 >
                   Back to payment link
