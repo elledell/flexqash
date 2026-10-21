@@ -137,25 +137,44 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-thin scrollbar-thumb-gray-200">
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Main</div>
           <nav className="space-y-1 mb-8">
-            <Link href="/dashboard" className={navItemClass("/dashboard")}>📊 Dashboard</Link>
+            <Link href="/dashboard" className={navItemClass("/dashboard")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#112a46] shadow-sm text-sm text-white">📊</div>
+              <span className="ml-3 font-semibold">Dashboard</span>
+            </Link>
           </nav>
 
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Accounts</div>
           <nav className="space-y-1 mb-8">
-            <Link href="/deposit" className={navItemClass("/deposit")}>💳 Deposit</Link>
-            <Link href="/withdraw" className={navItemClass("/withdraw")}>🏦 Withdraw</Link>
-            <Link href="/ranks" className={navItemClass("/ranks")}>🏆 Ranks</Link>
-            <Link href="/claim-bonus" className={navItemClass("/claim-bonus")}>🎁 Claim Bonus</Link>
-            <Link href="/pay-client" className={navItemClass("/pay-client")}>🤝 Pay for Client</Link>
+            <Link href="/deposit" className={navItemClass("/deposit")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-yellow-500 shadow-sm text-sm text-white">💳</div>
+              <span className="ml-3 font-semibold">Deposit</span>
+            </Link>
+            <Link href="/withdraw" className={navItemClass("/withdraw")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-500 shadow-sm text-sm text-white">🏦</div>
+              <span className="ml-3 font-semibold">Withdraw</span>
+            </Link>
+            <Link href="/ranks" className={navItemClass("/ranks")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500 shadow-sm text-sm text-white">🏆</div>
+              <span className="ml-3 font-semibold">Ranks</span>
+            </Link>
+            <Link href="/claim-bonus" className={navItemClass("/claim-bonus")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-500 shadow-sm text-sm text-white">🎁</div>
+              <span className="ml-3 font-semibold">Claim Bonus</span>
+            </Link>
+            <Link href="/pay-client" className={navItemClass("/pay-client")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-500 shadow-sm text-sm text-white">🤝</div>
+              <span className="ml-3 font-semibold">Pay for Client</span>
+            </Link>
           </nav>
           
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Network</div>
           <nav className="mb-8 space-y-4">
             <div className="flex flex-col">
               <div className={`${navItemClass("/team/1")} cursor-default`}>
-                <span className="text-lg">👥</span> Level 1 Team
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1abc9c] shadow-sm text-sm text-white">👥</div>
+                <span className="ml-3 font-semibold">Level 1 Team</span>
               </div>
-              <div className="ml-12 mt-3 mb-2 flex flex-col space-y-3">
+              <div className="ml-14 mt-3 mb-2 flex flex-col space-y-3">
                 <Link href="/team/1?status=active" className={subLinkClass("/team/1", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -167,9 +186,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
             <div className="flex flex-col">
               <div className={`${navItemClass("/team/2")} cursor-default`}>
-                <span className="text-lg">👥</span> Level 2 Team
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#16a085] shadow-sm text-sm text-white">👥</div>
+                <span className="ml-3 font-semibold">Level 2 Team</span>
               </div>
-              <div className="ml-12 mt-3 mb-2 flex flex-col space-y-3">
+              <div className="ml-14 mt-3 mb-2 flex flex-col space-y-3">
                 <Link href="/team/2?status=active" className={subLinkClass("/team/2", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -181,9 +201,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
             <div className="flex flex-col">
               <div className={`${navItemClass("/team/3")} cursor-default`}>
-                <span className="text-lg">👥</span> Level 3 Team
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0d6b59] shadow-sm text-sm text-white">👥</div>
+                <span className="ml-3 font-semibold">Level 3 Team</span>
               </div>
-              <div className="ml-12 mt-3 mb-2 flex flex-col space-y-3">
+              <div className="ml-14 mt-3 mb-2 flex flex-col space-y-3">
                 <Link href="/team/3?status=active" className={subLinkClass("/team/3", "active")}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current"></span> Active
                 </Link>
@@ -197,51 +218,104 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Best Features</div>
           <nav className="space-y-1 mb-6">
             <Link href="/products/investments" className={navItemClass("/products/investments")}>
-              📈 Investments <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
+              <div className="flex items-center">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 shadow-sm text-sm text-white">📈</div>
+                <span className="ml-3 font-semibold">Investments</span>
+              </div>
+              <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
             </Link>
+            
             <Link href="/products/chat" className={navItemClass("/products/chat")}>
-              💬 Chat with Lonely Foreigners <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] font-bold text-white">new</span>
+              <div className="flex items-center">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 shadow-sm text-sm text-white">💬</div>
+                <span className="ml-3 font-semibold truncate max-w-[140px]" title="Chat with Lonely Foreigners">Chat / Foreigners</span>
+              </div>
+              <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] font-bold text-white">new</span>
             </Link>
+            
             <Link href="/products/hotel-reviews" className={navItemClass("/products/hotel-reviews")}>
-              🏨 Hotel Reviews
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500 shadow-sm text-sm text-white">🏨</div>
+              <span className="ml-3 font-semibold">Hotel Reviews</span>
             </Link>
+            
             <Link href="/products/gigs" className={navItemClass("/products/gigs")}>
-              🎟️ Apply Gigs &amp; Events
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-orange-400 shadow-sm text-sm text-white">🎟️</div>
+              <span className="ml-3 font-semibold">Apply Gigs &amp; Events</span>
             </Link>
+            
             <Link href="/products/abroad-jobs" className={navItemClass("/products/abroad-jobs")}>
-              ✈️ Apply for Abroad Jobs <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] font-bold text-white">new</span>
+              <div className="flex items-center">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-500 shadow-sm text-sm text-white">✈️</div>
+                <span className="ml-3 font-semibold truncate max-w-[140px]" title="Apply for Abroad Jobs">Apply Abroad</span>
+              </div>
+              <span className="ml-auto rounded bg-[#1abc9c] px-1.5 py-0.5 text-[10px] font-bold text-white">new</span>
             </Link>
+            
             <Link href="/products/forex" className={navItemClass("/products/forex")}>
-              🏦 Forex Lessons
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-600 shadow-sm text-sm text-white">🏦</div>
+              <span className="ml-3 font-semibold">Forex Lessons</span>
             </Link>
           </nav>
 
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Products</div>
           <nav className="space-y-1 mb-8">
-            <Link href="/products/youtube" className={navItemClass("/products/youtube")}>▶️ YouTube Videos</Link>
-            <Link href="/products/tiktok" className={navItemClass("/products/tiktok")}>🎵 TikTok Videos</Link>
-            <Link href="/products/surveys" className={navItemClass("/products/surveys")}>📋 Surveys</Link>
-            <Link href="/products/reels" className={navItemClass("/products/reels")}>🎬 Reels</Link>
+            <Link href="/products/youtube" className={navItemClass("/products/youtube")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-500 shadow-sm text-sm text-white">▶️</div>
+              <span className="ml-3 font-semibold">YouTube Videos</span>
+            </Link>
             
-            <Link href="/products/articles" className={navItemClass("/products/articles")}>✍️ Article Writing</Link>
-<a 
-  href="https://1win.com/" 
-  target="_blank" 
-  rel="noopener noreferrer" 
-  className={navItemClass("/products/spin")}
->
-  🎡 Spin &amp; Win <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
-</a>
-            <Link href="/products/ads" className={navItemClass("/products/ads")}>🖱️ Click Ads</Link>
+            <Link href="/products/tiktok" className={navItemClass("/products/tiktok")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-orange-400 shadow-sm text-sm text-white">🎵</div>
+              <span className="ml-3 font-semibold">TikTok Videos</span>
+            </Link>
+            
+            <Link href="/products/surveys" className={navItemClass("/products/surveys")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-500 shadow-sm text-sm text-white">📋</div>
+              <span className="ml-3 font-semibold">Surveys</span>
+            </Link>
+            
+            <Link href="/products/reels" className={navItemClass("/products/reels")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500 shadow-sm text-sm text-white">🎬</div>
+              <span className="ml-3 font-semibold">Reels</span>
+            </Link>
+            
+            <Link href="/products/articles" className={navItemClass("/products/articles")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-pink-400 shadow-sm text-sm text-white">✍️</div>
+              <span className="ml-3 font-semibold">Article Writing</span>
+            </Link>
+            
+            <a 
+              href="https://1win.com/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className={navItemClass("/products/spin")}
+            >
+              <div className="flex items-center">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-500 shadow-sm text-sm text-white">🎡</div>
+                <span className="ml-3 font-semibold">Spin &amp; Win</span>
+              </div>
+              <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Hot</span>
+            </a>
+            
+            <Link href="/products/ads" className={navItemClass("/products/ads")}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-400 shadow-sm text-sm text-white">🖱️</div>
+              <span className="ml-3 font-semibold">Click Ads</span>
+            </Link>
           </nav>
 
           {/* Footer Actions */}
           <div className="mt-8 border-t border-gray-100 pt-6 space-y-2">
-            <Link href="/profile" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">👤 Profile</Link>
-            <Link href="/contact" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">🎧 Contact Us</Link>
+            <Link href="/profile" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-200 shadow-sm text-sm text-gray-700">👤</div>
+              Profile
+            </Link>
+            <Link href="/contact" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-200 shadow-sm text-sm text-gray-700">🎧</div>
+              Contact Us
+            </Link>
             <button
               onClick={() => signOut().then(() => router.push("/"))}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
             >
               Log Out
             </button>
