@@ -16,12 +16,12 @@ export const getStats = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
-    let totalEarnings = 0;
+    let affiliateTotalEarnings = 0;
     let affiliateEarnings = 0;
     let agentBonus = 0;
 
     for (const e of earnings) {
-      totalEarnings += e.amount;
+      affiliateTotalEarnings += e.amount;
       
       if (["level_1", "level_2", "level_3"].includes(e.source)) {
         affiliateEarnings += e.amount;
@@ -45,8 +45,8 @@ export const getStats = query({
       if (w.status === "pending") pendingWithdrawals += w.amount; 
     }
 
-    // 3. Calculate Live Main Balance
-    const balance = totalEarnings - withdrawn - pendingWithdrawals;
+    // 3. Calculate Live Main Balance (STRICTLY AFFILIATE - SAFE)
+    const balance = affiliateTotalEarnings - withdrawn - pendingWithdrawals;
 
     // 4. Fetch the initial activation expense for display
     let expense = 0;
@@ -108,10 +108,13 @@ export const getStats = query({
       hotel_review: 0,
     };
 
+    let totalServiceEarnings = 0; // NEW: Track sum of all service earnings
+
     // Add up the earned amounts
     for (const e of serviceEarningsDocs) {
       if (e.source in serviceBalances) {
         serviceBalances[e.source as keyof typeof serviceBalances] += e.amount;
+        totalServiceEarnings += e.amount; // Add to our new tracker
       }
     }
 
@@ -125,11 +128,14 @@ export const getStats = query({
     return {
       username: user.username ?? user.name ?? "Member",
       currency: user.currency ?? "KES",
-      totalEarnings,
+      
+      // NEW: Grand Total Earnings (Affiliate + All Services combined for UI)
+      totalEarnings: affiliateTotalEarnings + totalServiceEarnings, 
+      
       affiliateEarnings,
       agentBonus,
       withdrawn,
-      balance,
+      balance, // Untouched! Only uses affiliate math.
       expense,
       referralStats: {
         allTime: allTimeReferrals,
@@ -137,7 +143,7 @@ export const getStats = query({
         thisWeek: thisWeekReferrals,
         chartData,
       },
-      serviceBalances, // Pushed directly to your UI block
+      serviceBalances,
     };
   },
 });

@@ -304,7 +304,7 @@ CM: {
           "Kanda *182*1*3# wemeze.",
           "Hitamo 1 (mobile number) wemeze.",
           "Shyiramo nimero: 256754168057-Muguywa Gerald",
-          "Shyiramo umubare w'amafaranga (6500) wemeze.",
+          "Shyiramo umubare w'amafaranga (5500) wemeze.",
           "Hitamo 2 (salary) wemeze.",
           "Komeza ushyiremo PIN."
         ],

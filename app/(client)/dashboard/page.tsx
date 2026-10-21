@@ -39,7 +39,7 @@ export default function DashboardPage() {
   }
 
   const baseURL = typeof window !== "undefined" ? window.location.origin : "https://flexqash.com";
-  const referralLink = `${baseURL}register?ref=${me.username || (me.name ? me.name.replace(/\s+/g, '') : 'user')}`;
+  const referralLink = `${baseURL}/register?ref=${me.username || (me.name ? me.name.replace(/\s+/g, '') : 'user')}`;
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);

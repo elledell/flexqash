@@ -53,7 +53,7 @@ export default function Footer() {
               </li>
               <li>
                 <span className="block text-white">Phone:</span>
-                +254 700 000 000
+                +254 182 852 787
               </li>
               <li>
                 <span className="block text-white">Location:</span>

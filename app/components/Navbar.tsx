@@ -17,14 +17,22 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-brand-100 bg-white shadow-sm">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        {/* Logo */}
-        <Link href="/" className="flex flex-col leading-none" onClick={() => setOpen(false)}>
-          <span className="text-2xl font-extrabold text-brand-500">
-            Flex<span className="text-gold-500">Qash</span>
-          </span>
-          <span className="mt-1 text-[10px] font-semibold tracking-[0.3em] text-brand-900">
-            FOREX LESSONS
-          </span>
+        {/* Logo & Brand Name */}
+        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+          <img 
+            src="/logo.png" 
+            alt="FlexQash Logo" 
+            className="h-10 w-10 object-contain"
+            onError={(e) => console.error("Logo failed to load from /public/logo.png", e)}
+          />
+          <div className="flex flex-col leading-none">
+            <span className="text-2xl font-extrabold text-brand-500">
+              Flex<span className="text-gold-500">Qash</span>
+            </span>
+            <span className="mt-1 text-[10px] font-semibold tracking-[0.3em] text-brand-900">
+              Digital Marketing
+            </span>
+          </div>
         </Link>
 
         {/* Desktop links */}
@@ -102,7 +110,7 @@ export default function Navbar() {
               href="/register"
               className="flex-1 rounded-md bg-gold-400 py-2 text-center text-sm font-bold text-brand-900"
             >
-              Sign Up
+              Register
             </Link>
           </div>
         </div>

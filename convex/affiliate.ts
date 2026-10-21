@@ -77,6 +77,7 @@ export async function distributeCommissions(
         let payoutAmount = 0;
 
         // ⚠️ THE MALAWI EXCEPTION RULE ⚠️
+      // ⚠️ THE MALAWI EXCEPTION RULE ⚠️
         if (sourceCountry === "MW" && sponsorCountry !== "MW") {
           // Hardcoded KES baseline for foreigners referring Malawians
           const MALAWI_FOREIGNER_EXCEPTION_KES = {
@@ -84,12 +85,12 @@ export async function distributeCommissions(
             l2: 70,
             l3: 30,
           };
-          const exceptionBaseInKES = MALAWI_FOREIGNER_EXCEPTION_KES[level.tierKey];
+          const exceptionBaseInKES = MALAWI_FOREIGNER_EXCEPTION_KES[level.tierKey as keyof typeof MALAWI_FOREIGNER_EXCEPTION_KES];
           
           payoutAmount = convertAmount(
             exceptionBaseInKES,
-            "KES", // Starting from our fixed KES rate
-            sponsorCurrency, // Converting to the foreign sponsor's currency
+            "KES", 
+            sponsorCurrency, 
             fallbackInSponsorCurrency
           );
         } else {

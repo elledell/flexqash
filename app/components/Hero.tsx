@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 // TODO: replace with your real contact details
 const CONTACT = {
   email: "support@flexqash.com",
-  phone: "+254 700 000 000",
+  phone: "+254 182 852 787",
 };
 
 const headlines = [
