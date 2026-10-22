@@ -43,7 +43,7 @@ const cards = [
     title: "Ads & Tasks",
     blurb: "View sponsored ads, complete simple tasks and grow your balance on the go.",
     cta: "View Tasks",
-    href: "/tasks",
+    href: "/register",
     icon: (
       <>
         <rect x="3" y="6" width="18" height="13" rx="2" />
