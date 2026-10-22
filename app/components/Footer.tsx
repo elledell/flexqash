@@ -14,7 +14,7 @@ export default function Footer() {
                 Flex<span className="text-gold-500">Qash</span>
               </span>
               <span className="mt-1 text-[10px] font-semibold tracking-[0.3em] text-gold-300">
-                FOREX LESSONS
+                DIGITAL MARKETTING
               </span>
             </Link>
             <p className="mt-4 text-sm font-medium leading-relaxed text-brand-300">
