@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
-// This dictionary maps the URL slug to the visual details and exact database key
 const SERVICE_CONFIG: Record<string, { dbKey: string; title: string; icon: string; color: string }> = {
   chat: { dbKey: "chat", title: "Chat with Foreigners", icon: "💬", color: "bg-emerald-500" },
   ads: { dbKey: "ads", title: "Ads Earnings", icon: "📺", color: "bg-blue-400" },
@@ -40,14 +39,15 @@ export default function ServiceWithdrawalPage() {
     return <div className="p-8 text-[#112a46] font-bold">Loading balance...</div>;
   }
 
-  // Null check so TypeScript knows stats is fully loaded
   if (stats === null) {
     return <div className="p-8 text-red-500 font-bold">Error loading user stats.</div>;
   }
 
-  // Get the specific balance for the current service using the dbKey
   const availableBalance = stats.serviceBalances ? (stats.serviceBalances as any)[config.dbKey] || 0 : 0;
   const currency = stats.currency;
+  
+  // NEW: Safely pull the exact minimum calculated by the backend
+  const minWithdrawal = stats.serviceMinWithdrawal || 5000;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +102,7 @@ export default function ServiceWithdrawalPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest opacity-90">{config.title} EARNINGS</p>
             <h2 className="text-3xl font-black">{currency} {availableBalance.toLocaleString()}</h2>
-            <p className="text-[10px] uppercase tracking-widest opacity-80 mt-1">Available to withdraw</p>
+            <p className="mt-1 text-[10px] uppercase tracking-widest opacity-80">Available to withdraw</p>
           </div>
         </div>
 
@@ -112,7 +112,7 @@ export default function ServiceWithdrawalPage() {
           
           <p className="mb-6 text-sm leading-relaxed text-gray-500">
             Withdraw the money you earned from <strong>{config.title}</strong> straight to your mobile number. 
-            Minimum withdrawal equivalent is <strong>5,000 KES</strong>.
+            Minimum withdrawal is <strong>{minWithdrawal.toLocaleString()} {currency}</strong>.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -124,7 +124,7 @@ export default function ServiceWithdrawalPage() {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g. 5000"
+                placeholder={currency === "KES" ? "e.g. 5000" : `Enter amount in ${currency}`}
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-[#112a46] outline-none transition focus:border-[#1abc9c]"
               />
             </div>

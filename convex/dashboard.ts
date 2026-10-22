@@ -108,34 +108,44 @@ export const getStats = query({
       hotel_review: 0,
     };
 
-    let totalServiceEarnings = 0; // NEW: Track sum of all service earnings
+    let totalServiceEarnings = 0; 
 
-    // Add up the earned amounts
     for (const e of serviceEarningsDocs) {
       if (e.source in serviceBalances) {
         serviceBalances[e.source as keyof typeof serviceBalances] += e.amount;
-        totalServiceEarnings += e.amount; // Add to our new tracker
+        totalServiceEarnings += e.amount; 
       }
     }
 
-    // Subtract any pending or approved service withdrawals
     for (const w of serviceWithdrawalsDocs) {
       if (w.status !== "rejected" && w.service in serviceBalances) {
         serviceBalances[w.service as keyof typeof serviceBalances] -= w.amount;
       }
     }
 
+    // 7. NEW: Calculate Exact Minimum Withdrawal for this user's currency
+    let serviceMinWithdrawal = 5000;
+    const userCurrency = user.currency || "KES";
+    if (userCurrency !== "KES") {
+      const allRates = await ctx.db.query("exchangeRates").collect();
+      const rateDoc = allRates.find((r) => r.currency?.trim().toUpperCase() === userCurrency.toUpperCase());
+      if (rateDoc) {
+        const rate = typeof rateDoc.rateToKES === 'string' ? parseFloat(rateDoc.rateToKES) : rateDoc.rateToKES;
+        if (!isNaN(rate) && rate > 0) serviceMinWithdrawal = Math.round(5000 * rate);
+      }
+    }
+
     return {
       username: user.username ?? user.name ?? "Member",
-      currency: user.currency ?? "KES",
+      currency: userCurrency,
       
-      // NEW: Grand Total Earnings (Affiliate + All Services combined for UI)
+      // Grand Total Earnings (Affiliate + All Services combined for UI)
       totalEarnings: affiliateTotalEarnings + totalServiceEarnings, 
       
       affiliateEarnings,
       agentBonus,
       withdrawn,
-      balance, // Untouched! Only uses affiliate math.
+      balance, 
       expense,
       referralStats: {
         allTime: allTimeReferrals,
@@ -144,6 +154,7 @@ export const getStats = query({
         chartData,
       },
       serviceBalances,
+      serviceMinWithdrawal, // <-- Passing the exact number to the frontend
     };
   },
 });
