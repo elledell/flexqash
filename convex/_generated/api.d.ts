@@ -14,6 +14,7 @@ import type * as adminDashboard from "../adminDashboard.js";
 import type * as adminDeposits from "../adminDeposits.js";
 import type * as adminInvestments from "../adminInvestments.js";
 import type * as adminPayments from "../adminPayments.js";
+import type * as adminProfits from "../adminProfits.js";
 import type * as adminUsers from "../adminUsers.js";
 import type * as ads from "../ads.js";
 import type * as affiliate from "../affiliate.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   adminDeposits: typeof adminDeposits;
   adminInvestments: typeof adminInvestments;
   adminPayments: typeof adminPayments;
+  adminProfits: typeof adminProfits;
   adminUsers: typeof adminUsers;
   ads: typeof ads;
   affiliate: typeof affiliate;
