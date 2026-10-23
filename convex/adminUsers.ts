@@ -157,17 +157,38 @@ export const approveUserManually = mutation({
       membershipPaidAt: Date.now() 
     });
 
-    // 2. Find any pending manual payment requests and mark them as paid
+    // 2. Handle Deposit Record (Ghost Deposit Fix)
     const pendingPayments = await ctx.db
       .query("payments")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .filter((q) => q.eq(q.field("status"), "pending"))
       .collect();
 
-    for (const payment of pendingPayments) {
-      await ctx.db.patch(payment._id, { 
-        status: "paid", 
-        resultDesc: "Manually approved by Admin via Users table" 
+    if (pendingPayments.length > 0) {
+      for (const payment of pendingPayments) {
+        await ctx.db.patch(payment._id, { 
+          status: "paid", 
+          resultDesc: "Manually approved by Admin via Users table" 
+        });
+      }
+    } else {
+      // Inject missing deposit record for direct admin activations
+      const countryCode = user.country || "KE";
+      const priceDoc = await ctx.db
+        .query("membershipPrices")
+        .withIndex("by_country", (q) => q.eq("country", countryCode))
+        .first();
+      
+      await ctx.db.insert("payments", {
+        userId: args.userId,
+        purpose: "deposit",
+        provider: "manual",
+        amount: priceDoc ? priceDoc.amount : 0,
+        currency: user.currency || "KES",
+        phone: "Admin-Bypass",
+        methodTitle: "Direct Admin Activation",
+        status: "paid",
+        resultDesc: "Auto-generated during manual admin activation",
       });
     }
 

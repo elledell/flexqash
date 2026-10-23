@@ -129,7 +129,6 @@ export const getCountryDeposits = query({
     };
   },
 });
-
 // --------------------------------------------------------
 // NEW: Calculate Management Profits per Country
 // --------------------------------------------------------
@@ -138,46 +137,68 @@ export const getManagementProfits = query({
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
-    // Get all successful deposits and all earnings payouts
-    const allPayments = await ctx.db.query("payments").filter(q => q.eq(q.field("status"), "paid")).collect();
     const allEarnings = await ctx.db.query("earnings").collect();
     const allUsers = await ctx.db.query("users").collect();
-    const userMap = new Map(allUsers.map((u) => [u._id, u]));
+    const prices = await ctx.db.query("membershipPrices").collect();
+    const allRates = await ctx.db.query("exchangeRates").collect();
+    
+    // Map the explicit activation fees per country
+    const priceMap = new Map(prices.map((p) => [p.country, p.amount]));
+    
+    // Map Exchange Rates to KES baseline
+    const rateMap: Record<string, number> = { KES: 1 };
+    for (const r of allRates) {
+      rateMap[r.currency] = typeof r.rateToKES === 'string' ? parseFloat(r.rateToKES) : r.rateToKES;
+    }
 
     const profitStats: Record<string, { revenue: number; payouts: number; profit: number }> = {};
     COUNTRIES.forEach((c) => {
       profitStats[c.code] = { revenue: 0, payouts: 0, profit: 0 };
     });
 
-    // 1. Calculate Total Revenue (Deposits) per country
-    for (const p of allPayments) {
-      const u = userMap.get(p.userId);
-      const cCode = u?.country || "KE";
+    // 1. Base Revenue = (Number of Activated Users * Country Activation Price)
+    const activeUsers = allUsers.filter((u) => u.membership === "active");
+    for (const u of activeUsers) {
+      const cCode = u.country || "KE";
+      const activationFee = priceMap.get(cCode) || 0;
       if (profitStats[cCode]) {
-        profitStats[cCode].revenue += p.amount;
+        profitStats[cCode].revenue += activationFee;
       }
     }
 
-    // 2. Calculate Total Expenses (L1, L2, L3 Payouts) per country
+    // 2. Expenses = Convert paid amounts BACK to the source country's currency
     for (const e of allEarnings) {
-      // Only count referral commissions as expenses against the activation fee
       if (["level_1", "level_2", "level_3"].includes(e.source)) {
-        // Use the sourceCountry (the country where the fee originated)
-        const cCode = e.sourceCountry || "KE";
-        if (profitStats[cCode]) {
-          profitStats[cCode].payouts += e.amount;
+        const sourceCountryCode = e.sourceCountry || "KE";
+        const sourceCurrency = COUNTRIES.find(c => c.code === sourceCountryCode)?.currency || "KES";
+        const paidCurrency = e.currency || "KES";
+        
+        if (profitStats[sourceCountryCode]) {
+          let expenseInSourceCurrency = e.amount;
+          
+          // If cross-border (like the Malawi Exception), convert the paid amount back to the source currency
+          if (paidCurrency !== sourceCurrency) {
+            const paidRate = rateMap[paidCurrency] || 1;
+            const sourceRate = rateMap[sourceCurrency] || 1;
+            
+            // Convert paid amount to KES, then back to Source Currency
+            const amountInKES = paidCurrency === "KES" ? e.amount : e.amount / paidRate;
+            expenseInSourceCurrency = sourceCurrency === "KES" ? amountInKES : amountInKES * sourceRate;
+          }
+          
+          profitStats[sourceCountryCode].payouts += expenseInSourceCurrency;
         }
       }
     }
 
-    // 3. Map into the final array and remove countries with zero activity
+    // 3. Exact Management Profit = Revenue - Payouts
     const countryProfits = COUNTRIES.map((c) => {
       const stats = profitStats[c.code];
       return {
         ...c,
-        revenue: stats.revenue,
-        payouts: stats.payouts,
-        profit: stats.revenue - stats.payouts,
+        revenue: Math.round(stats.revenue),
+        payouts: Math.round(stats.payouts),
+        profit: Math.round(stats.revenue - stats.payouts),
       };
     }).filter((c) => c.revenue > 0 || c.payouts > 0); 
 
