@@ -76,7 +76,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="mt-8 mb-2 px-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Users & Support</div>
           <nav className="space-y-1">
             <Link href="/admin/users" className={navItemClass("/admin/users")}>👥 Users</Link>
-            <Link href="/admin/visitors" className={navItemClass("/admin/visitors")}>👤 Visitors</Link>
             <Link href="/admin/messages" className={navItemClass("/admin/messages")}>✉️ Contact Messages</Link>
           </nav>
 
@@ -86,13 +85,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/withdrawals" className={navItemClass("/admin/withdrawals")}>🏦 Withdrawals</Link>
             <Link href="/admin/transactions" className={navItemClass("/admin/transactions")}>🔔 Activation Requests</Link>
           </nav>
-
-          <div className="mt-8 mb-2 px-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Security</div>
-          <nav className="space-y-1">
-            <Link href="/admin/rate-limits" className={navItemClass("/admin/rate-limits")}>🛡️ Rate Limits</Link>
-            <Link href="/admin/logs" className={navItemClass("/admin/logs")}>⏱️ Admin Logs</Link>
-          </nav>
-
           <div className="mt-8 mb-2 px-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Configuration</div>
           <nav className="space-y-1">
             <Link href="/admin/rates" className={navItemClass("/admin/rates")}>💱 Exchange Rates</Link>
