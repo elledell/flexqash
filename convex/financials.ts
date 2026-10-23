@@ -15,7 +15,7 @@ export const COUNTRY_FINANCIALS: Record<
   RW: { currency: "RWF", l1: 2975, l2: 1664, l3: 604, minWithdrawal: 5500, withdrawalFee: 500 },
   BI: { currency: "BIF", l1: 8584, l2: 4640, l3: 2784, minWithdrawal: 28000, withdrawalFee: 4500 },
   ZM: { currency: "ZMW", l1: 55, l2: 33, l3: 22, minWithdrawal: 130, withdrawalFee: 30 },
-  MW: { currency: "MWK", l1: 7014, l2: 1000, l3: 500, minWithdrawal: 14000, withdrawalFee: 2000 },
+  MW: { currency: "MWK", l1: 7000, l2: 1000, l3: 500, minWithdrawal: 14000, withdrawalFee: 2000 },
   BW: { currency: "BWP", l1: 35, l2: 18, l3: 9, minWithdrawal: 90, withdrawalFee: 15 },
   CM: { currency: "XAF", l1: 1718, l2: 737, l3: 366, minWithdrawal: 3100, withdrawalFee: 700 },
   GH: { currency: "GHS", l1: 36, l2: 13, l3: 9, minWithdrawal: 85, withdrawalFee: 10 },
