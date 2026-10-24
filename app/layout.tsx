@@ -14,8 +14,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FlexQash",
-  description: "Learn forex step by step with practical, beginner-friendly lessons.",
+  title: "FlexQash | The Premier African Digital Earnings Platform",
+  description: "Join FlexQash to earn through multi-level referrals, investments, and daily tasks. Secure, fast, and supporting multiple African currencies.",
+  keywords: ["FlexQash", "Make money online Africa", "Digital earnings", "Referral platform", "Investments"],
+  openGraph: {
+    title: "FlexQash | The Premier African Digital Earnings Platform",
+    description: "Join FlexQash to earn through multi-level referrals, investments, and daily tasks.",
+    url: "https://flexqash.com",
+    siteName: "FlexQash",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FlexQash",
+    description: "The Premier African Digital Earnings Platform",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
