@@ -10,6 +10,38 @@ export default function TopEarnersPage() {
     searchTerm: searchTerm.length > 2 ? searchTerm : undefined 
   });
 
+  const exportToCSV = () => {
+    if (!earners || earners.length === 0) return;
+
+    const headers = ["Rank", "Username", "Email", "Phone", "Country", "Native Currency", "Native Earnings", "KES Equivalent"];
+    const csvRows = [headers.join(",")];
+
+    earners.forEach((earner, index) => {
+      const row = [
+        index + 1,
+        `"${earner.username}"`,
+        `"${earner.email}"`,
+        `"${earner.phone}"`,
+        `"${earner.country}"`,
+        `"${earner.currency}"`,
+        earner.nativeTotal,
+        earner.kesTotal
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `flexqash_top_earners_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -19,6 +51,14 @@ export default function TopEarnersPage() {
             Global network earnings ranked by KES standardized value
           </p>
         </div>
+        
+        <button
+          onClick={exportToCSV}
+          disabled={!earners || earners.length === 0}
+          className="flex items-center gap-2 rounded-xl bg-[#112a46] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1abc9c] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          📥 Export CSV
+        </button>
       </div>
 
       {/* Search Bar */}

@@ -154,19 +154,17 @@ export const PAYMENT_INSTRUCTIONS: Record<string, CountryInstruction> = {
     methods: [
       {
         id: "mtn",
-        title: "PAY WITH MTN ZAMBIA",
+        title: "PAY WITH MTN ZAMBIA (AUTOMATIC PAYMENT)",
         buttonLabel: "Pay with MTN",
-        copyableCode: "254117659509",
+        copyableCode: "0972143213",
         copyableLabel: "Number",
         steps: [
           "Dial *115# on your MTN SIM",
-          "Select Send Money",
-          "Select International Transfer",
-          "Select Kenya",
-          "Enter Number: 254117659509",
-          "Enter Amount: ZMW 130",
-          "Confirm it is Denis kilei Mbaika",
-          "Enter PIN",
+          "Select 1. Send Money",
+          "Enter the MTN number 0972143213",
+          "Enter amount. ZK 130",
+          "Confirm it is (ENEYA CHILUFYA)",
+          "Enter your MTN Money PIN",
         ],
       },
       {
@@ -231,15 +229,18 @@ export const PAYMENT_INSTRUCTIONS: Record<string, CountryInstruction> = {
       },
     ],
   },
-GH: {
+  GH: {
     type: "eversend",
     methods: [
       {
         id: "eversend",
-        title: "Pay via Eversend (Ghana)",
-        buttonLabel: "Pay with Eversend",
+        title: "Pay via Eversend (Ghana - 87 Cedis)",
+        buttonLabel: "Pay 87 Cedis with Eversend",
         link: "https://eversend.me/lionizer254",
-        steps: [],
+        steps: [
+          "Click the button above to pay via Eversend",
+          "Ensure the payment amount is exactly 87 Cedis"
+        ],
       },
     ],
   },
@@ -255,7 +256,7 @@ GH: {
       },
     ],
   },
-INT: {
+  INT: {
     type: "manual",
     methods: [
       {
@@ -275,7 +276,7 @@ INT: {
       },
     ],
   },
-CM: {
+  CM: {
     type: "selar",
     methods: [
       {
@@ -287,7 +288,6 @@ CM: {
       },
     ],
   },
-  
   RW: {
     type: "manual",
     methods: [
