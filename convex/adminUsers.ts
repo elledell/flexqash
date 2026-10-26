@@ -235,13 +235,33 @@ export const updateUplink = mutation({
   }
 });
 
-// Delete a user account permanently
+// Delete a user account permanently and clear their authentication records
 export const deleteUser = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
     
-    // Deletes the user record from the database
+    // 1. Delete the authentication accounts to free up the email
+    const authAccounts = await ctx.db
+      .query("authAccounts")
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .collect();
+
+    for (const account of authAccounts) {
+      await ctx.db.delete(account._id);
+    }
+
+    // 2. Delete any active login sessions to log them out immediately
+    const authSessions = await ctx.db
+      .query("authSessions")
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .collect();
+
+    for (const session of authSessions) {
+      await ctx.db.delete(session._id);
+    }
+    
+    // 3. Deletes the primary user record from the database
     await ctx.db.delete(args.userId);
     
     return { success: true };
