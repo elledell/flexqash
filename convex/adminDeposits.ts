@@ -16,7 +16,7 @@ const COUNTRIES = [
   { code: "CM", name: "Cameroon", currency: "XAF" },
   { code: "SS", name: "South Sudan", currency: "SSP" },
   { code: "CD", name: "DR Congo", currency: "CDF" },
-  { code: "INT", name: "International", currency: "USD" }, // Added International
+  { code: "INT", name: "International", currency: "USD" },
 ];
 
 export const getFinanceOverview = query({
@@ -25,26 +25,26 @@ export const getFinanceOverview = query({
     await requireAdmin(ctx);
 
     const allPayments = await ctx.db.query("payments").collect();
-      
     const allUsers = await ctx.db.query("users").collect();
     const userMap = new Map(allUsers.map((u) => [u._id, u]));
 
-    const totalTx = allPayments.length;
-    const completedTx = allPayments.filter((p) => p.status === "paid").length;
-    const successRate = totalTx > 0 ? Math.round((completedTx / totalTx) * 100) : 0;
+    // STRICT CONSISTENCY: Only evaluate completed payments linked to an existing user
+    const validCompletedPayments = allPayments.filter(p => p.status === "paid" && userMap.has(p.userId));
+
+    const totalTx = validCompletedPayments.length;
+    const completedTx = validCompletedPayments.length;
+    const successRate = totalTx > 0 ? 100 : 0; 
 
     const countryStats: Record<string, { volume: number; txCount: number }> = {};
     COUNTRIES.forEach((c) => {
       countryStats[c.code] = { volume: 0, txCount: 0 };
     });
 
-    for (const p of allPayments) {
-      const u = userMap.get(p.userId);
-      const cCode = u?.country || "KE";
-      if (!countryStats[cCode]) countryStats[cCode] = { volume: 0, txCount: 0 };
-      
-      countryStats[cCode].txCount++;
-      if (p.status === "paid") {
+    for (const p of validCompletedPayments) {
+      const u = userMap.get(p.userId)!;
+      const cCode = u.country || "KE";
+      if (countryStats[cCode]) {
+        countryStats[cCode].txCount++;
         countryStats[cCode].volume += p.amount;
       }
     }
@@ -78,16 +78,14 @@ export const getCountryDeposits = query({
     const userMap = new Map(allUsers.map((u) => [u._id, u]));
 
     let deposits = await ctx.db.query("payments").order("desc").collect();
-    deposits = deposits.filter((d) => countryUsers.has(d.userId));
+    
+    // STRICT CONSISTENCY: Strip out pending/failed transactions entirely 
+    deposits = deposits.filter((d) => countryUsers.has(d.userId) && d.status === "paid");
 
     const totalTx = deposits.length;
-    const completedTx = deposits.filter((p) => p.status === "paid").length;
-    const volume = deposits.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
-    const successRate = totalTx > 0 ? Math.round((completedTx / totalTx) * 100) : 0;
-
-    if (status && status !== "all") {
-      deposits = deposits.filter((d) => d.status === status);
-    }
+    const completedTx = deposits.length;
+    const volume = deposits.reduce((sum, p) => sum + p.amount, 0);
+    const successRate = totalTx > 0 ? 100 : 0;
 
     if (search) {
       const s = search.toLowerCase();
@@ -129,23 +127,22 @@ export const getCountryDeposits = query({
     };
   },
 });
+
 // --------------------------------------------------------
-// NEW: Calculate Management Profits per Country
+// Calculate Management Profits per Country
 // --------------------------------------------------------
 export const getManagementProfits = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
+    const allPayments = await ctx.db.query("payments").collect();
     const allEarnings = await ctx.db.query("earnings").collect();
     const allUsers = await ctx.db.query("users").collect();
-    const prices = await ctx.db.query("membershipPrices").collect();
     const allRates = await ctx.db.query("exchangeRates").collect();
     
-    // Map the explicit activation fees per country
-    const priceMap = new Map(prices.map((p) => [p.country, p.amount]));
-    
-    // Map Exchange Rates to KES baseline
+    const userMap = new Map(allUsers.map((u) => [u._id, u]));
+
     const rateMap: Record<string, number> = { KES: 1 };
     for (const r of allRates) {
       rateMap[r.currency] = typeof r.rateToKES === 'string' ? parseFloat(r.rateToKES) : r.rateToKES;
@@ -156,13 +153,15 @@ export const getManagementProfits = query({
       profitStats[c.code] = { revenue: 0, payouts: 0, profit: 0 };
     });
 
-    // 1. Base Revenue = (Number of Activated Users * Country Activation Price)
-    const activeUsers = allUsers.filter((u) => u.membership === "active");
-    for (const u of activeUsers) {
+    // 1. EXACT Revenue = Sum of actual PAID deposits (ignores pending and deleted users)
+    for (const p of allPayments) {
+      if (p.status !== "paid") continue;
+      const u = userMap.get(p.userId);
+      if (!u) continue; 
+
       const cCode = u.country || "KE";
-      const activationFee = priceMap.get(cCode) || 0;
       if (profitStats[cCode]) {
-        profitStats[cCode].revenue += activationFee;
+        profitStats[cCode].revenue += p.amount;
       }
     }
 
@@ -176,12 +175,10 @@ export const getManagementProfits = query({
         if (profitStats[sourceCountryCode]) {
           let expenseInSourceCurrency = e.amount;
           
-          // If cross-border (like the Malawi Exception), convert the paid amount back to the source currency
           if (paidCurrency !== sourceCurrency) {
             const paidRate = rateMap[paidCurrency] || 1;
             const sourceRate = rateMap[sourceCurrency] || 1;
             
-            // Convert paid amount to KES, then back to Source Currency
             const amountInKES = paidCurrency === "KES" ? e.amount : e.amount / paidRate;
             expenseInSourceCurrency = sourceCurrency === "KES" ? amountInKES : amountInKES * sourceRate;
           }
