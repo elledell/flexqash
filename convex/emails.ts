@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
+import { calculateWithdrawalFee } from "./financials";
 
 const SENDER_EMAIL = "FlexQash <support@send.flexqash.com>"; 
 
@@ -33,9 +34,18 @@ export const sendActivationEmail = internalAction({
 });
 
 export const sendWithdrawalApprovalEmail = internalAction({
-  args: { email: v.string(), name: v.string(), amount: v.number(), currency: v.string() },
-  handler: async (ctx, { email, name, amount, currency }) => {
+  args: { 
+    email: v.string(), 
+    name: v.string(), 
+    amount: v.number(), 
+    currency: v.string(),
+    countryCode: v.string() // Added country code to determine the dynamic fee
+  },
+  handler: async (ctx, { email, name, amount, currency, countryCode }) => {
     const resend = new Resend(process.env.AUTH_RESEND_KEY!);
+
+    // Dynamically calculate the fee and net amount using your financial rules
+    const { fee, netAmount } = calculateWithdrawalFee(countryCode, amount);
 
     try {
       await resend.emails.send({
@@ -68,11 +78,11 @@ export const sendWithdrawalApprovalEmail = internalAction({
                   </tr>
                   <tr>
                     <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; color: #4b5563;">Fee</td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #1f2937;">${currency} 0.00</td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #1f2937;">${currency} ${fee.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; color: #4b5563;">Net Amount</td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #2563eb;">${currency} ${amount.toLocaleString()}</td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #2563eb;">${currency} ${netAmount.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td style="padding: 12px 0; color: #4b5563;">Status</td>

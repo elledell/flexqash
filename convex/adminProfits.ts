@@ -51,7 +51,7 @@ export const getTransactionProfits = query({
         const eCurrency = e.currency || "KES";
         let expenseNative = e.amount;
         
-        // Reverse cross-border exchange rates (Malawi exception)
+        // Reverse cross-border exchange rates
         if (eCurrency !== currency) {
            const paidRate = rateMap[eCurrency] || 1;
            const sourceRate = rateMap[currency] || 1;
@@ -71,11 +71,14 @@ export const getTransactionProfits = query({
       const conversionRate = rateMap[currency] || 1;
       let profitKES = currency === "KES" ? nativeProfit : nativeProfit / conversionRate;
 
-      // ⚠️ THE MALAWI FIXED PROFIT OVERRIDE ⚠️
-      // Ignores the standard math and forces the admin profit to 60 KES due to gateway factoring constraints.
+      // ⚠️ FIXED PROFIT OVERRIDES (Gateway Factoring) ⚠️
+      // Ignores the standard math and forces the admin profit due to gateway constraints.
       if (country === "MW") {
         profitKES = 60; 
-        nativeProfit = 60 * conversionRate; // Adjusts the native MWK display so the table math makes sense visually
+        nativeProfit = 60 * conversionRate; 
+      } else if (country === "ZM") {
+        profitKES = 70;
+        nativeProfit = 70 * conversionRate;
       }
 
       return {

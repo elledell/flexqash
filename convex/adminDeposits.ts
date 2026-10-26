@@ -194,10 +194,13 @@ export const getManagementProfits = query({
       const stats = profitStats[c.code];
       let nativeProfit = stats.revenue - stats.payouts;
 
-      // ⚠️ THE MALAWI FIXED PROFIT OVERRIDE ⚠️
+      // ⚠️ FIXED PROFIT OVERRIDES (Gateway Factoring) ⚠️
       if (c.code === "MW") {
         const conversionRate = rateMap["MWK"] || 1;
         nativeProfit = (60 * stats.txCount) * conversionRate;
+      } else if (c.code === "ZM") {
+        const conversionRate = rateMap["ZMW"] || 1;
+        nativeProfit = (70 * stats.txCount) * conversionRate;
       }
 
       return {
@@ -211,6 +214,7 @@ export const getManagementProfits = query({
     return countryProfits;
   }
 });
+
 export const getTopEarners = query({
   args: { searchTerm: v.optional(v.string()) },
   handler: async (ctx, { searchTerm }) => {
