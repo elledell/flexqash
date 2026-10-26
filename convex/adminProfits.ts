@@ -65,11 +65,18 @@ export const getTransactionProfits = query({
       });
 
       const totalExpenses = l1 + l2 + l3;
-      const nativeProfit = activationFee - totalExpenses;
+      let nativeProfit = activationFee - totalExpenses;
 
       // Final conversion of the remaining profit into Kenya Shillings
       const conversionRate = rateMap[currency] || 1;
-      const profitKES = currency === "KES" ? nativeProfit : nativeProfit / conversionRate;
+      let profitKES = currency === "KES" ? nativeProfit : nativeProfit / conversionRate;
+
+      // ⚠️ THE MALAWI FIXED PROFIT OVERRIDE ⚠️
+      // Ignores the standard math and forces the admin profit to 60 KES due to gateway factoring constraints.
+      if (country === "MW") {
+        profitKES = 60; 
+        nativeProfit = 60 * conversionRate; // Adjusts the native MWK display so the table math makes sense visually
+      }
 
       return {
         _id: d._id,

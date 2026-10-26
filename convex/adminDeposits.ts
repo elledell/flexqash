@@ -151,9 +151,9 @@ export const getManagementProfits = query({
       rateMap[r.currency] = typeof r.rateToKES === 'string' ? parseFloat(r.rateToKES) : r.rateToKES;
     }
 
-    const profitStats: Record<string, { revenue: number; payouts: number; profit: number }> = {};
+    const profitStats: Record<string, { revenue: number; payouts: number; txCount: number }> = {};
     COUNTRIES.forEach((c) => {
-      profitStats[c.code] = { revenue: 0, payouts: 0, profit: 0 };
+      profitStats[c.code] = { revenue: 0, payouts: 0, txCount: 0 };
     });
 
     for (const p of allPayments) {
@@ -164,6 +164,7 @@ export const getManagementProfits = query({
       const cCode = u.country || "KE";
       if (profitStats[cCode]) {
         profitStats[cCode].revenue += p.amount;
+        profitStats[cCode].txCount += 1;
       }
     }
 
@@ -191,11 +192,19 @@ export const getManagementProfits = query({
 
     const countryProfits = COUNTRIES.map((c) => {
       const stats = profitStats[c.code];
+      let nativeProfit = stats.revenue - stats.payouts;
+
+      // ⚠️ THE MALAWI FIXED PROFIT OVERRIDE ⚠️
+      if (c.code === "MW") {
+        const conversionRate = rateMap["MWK"] || 1;
+        nativeProfit = (60 * stats.txCount) * conversionRate;
+      }
+
       return {
         ...c,
         revenue: Math.round(stats.revenue),
         payouts: Math.round(stats.payouts),
-        profit: Math.round(stats.revenue - stats.payouts),
+        profit: Math.round(nativeProfit),
       };
     }).filter((c) => c.revenue > 0 || c.payouts > 0); 
 
