@@ -81,11 +81,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="mt-8 mb-2 px-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Transactions</div>
           <nav className="space-y-1">
-            <Link href="/admin/deposits" className={navItemClass("/admin/deposits")}>📊 Deposits</Link>
-            <Link href="/admin/withdrawals" className={navItemClass("/admin/withdrawals")}>🏦 Withdrawals</Link>
-            <Link href="/admin/transactions" className={navItemClass("/admin/transactions")}>🔔 Activation Requests</Link>
-            <Link href="/admin/profits" className={navItemClass("/admin/profits")}>💰 Management Profits</Link>
-          </nav>
+  <Link href="/admin/deposits" className={navItemClass("/admin/deposits")}>📊 Deposits</Link>
+  <Link href="/admin/withdrawals" className={navItemClass("/admin/withdrawals")}>🏦 Withdrawals</Link>
+  <Link href="/admin/transactions" className={navItemClass("/admin/transactions")}>🔔 Activation Requests</Link>
+  <Link href="/admin/profits" className={navItemClass("/admin/profits")}>💰 Management Profits</Link>
+  <Link href="/admin/top-earners" className={navItemClass("/admin/top-earners")}>🏆 Top Earners</Link>
+</nav>
           
           <div className="mt-8 mb-2 px-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Configuration</div>
           <nav className="space-y-1">

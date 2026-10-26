@@ -211,3 +211,66 @@ export const getManagementProfits = query({
     return countryProfits;
   }
 });
+export const getTopEarners = query({
+  args: { searchTerm: v.optional(v.string()) },
+  handler: async (ctx, { searchTerm }) => {
+    await requireAdmin(ctx);
+
+    const allUsers = await ctx.db.query("users").collect();
+    const allEarnings = await ctx.db.query("earnings").collect();
+    const allRates = await ctx.db.query("exchangeRates").collect();
+
+    // Build the exchange rate map anchored to KES
+    const rateMap: Record<string, number> = { KES: 1 };
+    for (const r of allRates) {
+      rateMap[r.currency] = typeof r.rateToKES === 'string' ? parseFloat(r.rateToKES) : r.rateToKES;
+    }
+
+    // Group all earnings by the user who received them
+    const userEarningsMap = new Map<string, number>();
+    for (const e of allEarnings) {
+      const current = userEarningsMap.get(e.userId) || 0;
+      userEarningsMap.set(e.userId, current + e.amount);
+    }
+
+    let results = [];
+    for (const [userId, nativeTotal] of userEarningsMap.entries()) {
+      if (nativeTotal <= 0) continue;
+
+      const u = allUsers.find(user => user._id === userId);
+      if (!u) continue;
+
+      const currency = u.currency || "KES";
+      const conversionRate = rateMap[currency] || 1;
+      
+      // Convert the user's native total into KES for standardized sorting
+      const totalInKES = currency === "KES" ? nativeTotal : nativeTotal / conversionRate;
+
+      results.push({
+        _id: u._id,
+        username: u.username || u.name || "Unknown",
+        email: u.email || "No Email",
+        phone: u.phone || "No Phone",
+        country: u.country || "KE",
+        currency: currency,
+        nativeTotal: Math.round(nativeTotal),
+        kesTotal: Math.round(totalInKES)
+      });
+    }
+
+    // Apply the search filter
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      results = results.filter(r =>
+        r.username.toLowerCase().includes(s) ||
+        r.email.toLowerCase().includes(s) ||
+        r.phone.toLowerCase().includes(s)
+      );
+    }
+
+    // Sort by the standardized KES total (Highest to Lowest)
+    results.sort((a, b) => b.kesTotal - a.kesTotal);
+
+    return results;
+  }
+});
