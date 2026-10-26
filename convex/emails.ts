@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
-import { calculateWithdrawalFee } from "./financials";
 
 const SENDER_EMAIL = "FlexQash <support@send.flexqash.com>"; 
 
@@ -37,15 +36,13 @@ export const sendWithdrawalApprovalEmail = internalAction({
   args: { 
     email: v.string(), 
     name: v.string(), 
-    amount: v.number(), 
+    amount: v.number(), // This is now the Gross Amount (e.g., 435 KES or 19000 MWK)
+    fee: v.number(),    // The transaction fee (e.g., 35 KES or 2000 MWK)
+    netAmount: v.number(), // The exact amount sent to the user (e.g., 400 KES or 17000 MWK)
     currency: v.string(),
-    countryCode: v.string() // Added country code to determine the dynamic fee
   },
-  handler: async (ctx, { email, name, amount, currency, countryCode }) => {
+  handler: async (ctx, { email, name, amount, fee, netAmount, currency }) => {
     const resend = new Resend(process.env.AUTH_RESEND_KEY!);
-
-    // Dynamically calculate the fee and net amount using your financial rules
-    const { fee, netAmount } = calculateWithdrawalFee(countryCode, amount);
 
     try {
       await resend.emails.send({

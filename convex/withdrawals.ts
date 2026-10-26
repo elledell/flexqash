@@ -222,9 +222,10 @@ export const updateWithdrawalStatus = mutation({
         await ctx.scheduler.runAfter(0, internal.emails.sendWithdrawalApprovalEmail, {
           email: user.email,
           name: user.name || user.username || "Member",
-          amount: w.netAmount, 
+          amount: w.amount,      // Passes Gross Amount directly from DB
+          fee: w.fee,            // Passes exact Fee from DB
+          netAmount: w.netAmount,// Passes exact Net Amount sent
           currency: w.currency,
-          countryCode: user.country || "KE" // ADDED: Passes the country code for the dynamic fee calculator
         });
       }
     }
