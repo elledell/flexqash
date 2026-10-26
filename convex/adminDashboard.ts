@@ -28,13 +28,15 @@ export const getOverview = query({
       return amount / rate;
     };
 
-    // FIX: Use .collect() instead of .take(500) to ensure we do not miss older deposits
     const allPayments = await ctx.db.query("payments").order("desc").collect();
     
-    // Strictly calculate math using ONLY paid deposits
-    const filteredPayments = allPayments.filter(p => userIds.has(p.userId) && p.status === "paid" && p.purpose === "deposit");
+    // FIX 1: Removed `&& p.purpose === "deposit"` so it perfectly matches the Finance Analytics page
+    const filteredPayments = allPayments.filter(p => userIds.has(p.userId) && p.status === "paid");
     
-    const totalDeposits = filteredPayments.reduce((sum, p) => sum + convertToKES(p.amount, p.currency || "KES"), 0);
+    // FIX 2: Only normalize to KES if viewing "All Countries". Otherwise, show exact native currency.
+    const totalDeposits = filteredPayments.reduce((sum, p) => {
+      return sum + (countryCode === "ALL" ? convertToKES(p.amount, p.currency || "KES") : p.amount);
+    }, 0);
 
     // Allow ALL statuses to show in the recent activity list, but not in the math
     const activity = allPayments
@@ -67,9 +69,12 @@ export const getOverview = query({
 
       const dailyUsers = filteredUsers.filter(u => u._creationTime >= startOfDay && u._creationTime <= endOfDay).length;
       
+      // FIX 2 Applied to chart: Native currency for specific countries, KES for "ALL"
       const dailyDeposits = filteredPayments
         .filter(p => p._creationTime >= startOfDay && p._creationTime <= endOfDay)
-        .reduce((sum, p) => sum + convertToKES(p.amount, p.currency || "KES"), 0);
+        .reduce((sum, p) => {
+          return sum + (countryCode === "ALL" ? convertToKES(p.amount, p.currency || "KES") : p.amount);
+        }, 0);
 
       chartData.push({ 
         name: label, 
