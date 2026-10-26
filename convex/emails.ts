@@ -16,11 +16,11 @@ export const sendActivationEmail = internalAction({
         subject: "Your FlexQash Account is Activated! 🎉",
         html: `
           <div style="font-family: Arial, sans-serif; color: #112a46; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-            <h2 style="color: #1abc9c;">Welcome to FlexQash, ${name}!</h2>
+            <h2 style="color: #3b82f6;">Welcome to FlexQash, ${name}!</h2>
             <p>Great news! Your account has been officially activated by our administration team.</p>
             <p>You can now log in to your dashboard, start investing, apply for gigs, and share your referral code to earn commissions.</p>
             <br/>
-            <a href="https://flexqash.com/dashboard" style="background-color: #112a46; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
+            <a href="https://flexqash.com/dashboard" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
             <br/><br/>
             <p>Best regards,<br/><strong>Luxtech Management</strong></p>
           </div>
@@ -41,16 +41,48 @@ export const sendWithdrawalApprovalEmail = internalAction({
       await resend.emails.send({
         from: SENDER_EMAIL,
         to: email,
-        subject: "Withdrawal Approved & Sent! 💸",
+        subject: "Withdrawal Confirmation ✅",
         html: `
-          <div style="font-family: Arial, sans-serif; color: #112a46; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-            <h2 style="color: #1abc9c;">Withdrawal Successful!</h2>
-            <p>Hello ${name},</p>
-            <p>Your withdrawal request for <strong>${currency} ${amount.toLocaleString()}</strong> has been approved and processed by our team.</p>
-            <p>Please check your mobile money or bank account to confirm you have received the funds.</p>
-            <br/>
-            <p>Thank you for using FlexQash!</p>
-            <p><strong>LUXTECH MANAGEMENT</strong></p>
+          <div style="font-family: Arial, sans-serif; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #eee; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            
+            <!-- FlexQash Light Blue Header -->
+            <div style="background-color: #3b82f6; padding: 30px 20px; text-align: center;">
+              <h2 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 600;">FlexQash Withdrawal Confirmation</h2>
+              <p style="margin: 8px 0 0 0; color: #eff6ff; font-size: 14px; font-weight: 500;">✔ Withdrawal Successfully Completed</p>
+            </div>
+            
+            <!-- Body Content -->
+            <div style="padding: 30px 25px;">
+              <p style="margin: 0 0 15px 0; font-size: 16px;">Dear <strong>${name}</strong>,</p>
+              <p style="margin: 0 0 25px 0; font-size: 16px; line-height: 1.5;">
+                Your withdrawal has been <span style="color: #2563eb; font-weight: bold;">successfully completed</span>.
+              </p>
+              <p style="margin: 0 0 15px 0; font-size: 15px;">Below are the details of your transaction:</p>
+              
+              <!-- Soft Blue Table Box -->
+              <div style="background-color: #eff6ff; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; color: #4b5563;">Amount</td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #1f2937;">${currency} ${amount.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; color: #4b5563;">Fee</td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #1f2937;">${currency} 0.00</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; color: #4b5563;">Net Amount</td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #dbeafe; text-align: right; font-weight: bold; color: #2563eb;">${currency} ${amount.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; color: #4b5563;">Status</td>
+                    <td style="padding: 12px 0; text-align: right; font-weight: bold; color: #1f2937;">COMPLETED</td>
+                  </tr>
+                </table>
+              </div>
+              
+              <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">Thank you for using FlexQash.</p>
+            </div>
           </div>
         `
       });
@@ -79,12 +111,12 @@ export const sendEarningsEmail = internalAction({
         subject: `FlexQash L${level} Earnings 💰`,
         html: `
           <div style="font-family: Arial, sans-serif; color: #112a46; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-            <h2 style="color: #1abc9c;">Congratulations! 🎉</h2>
+            <h2 style="color: #3b82f6;">Congratulations! 🎉</h2>
             <p>Hello ${name},</p>
             <p>You have just earned <strong>${currency} ${amount.toLocaleString()}</strong> from a Level ${level} referral!</p>
             <p>This commission was instantly added to your wallet because <strong>${fromUsername}</strong> just joined and activated their account in your downline network.</p>
             <br/>
-            <a href="https://flexqash.com/dashboard" style="background-color: #112a46; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">View My Wallet</a>
+            <a href="https://flexqash.com/dashboard" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">View My Wallet</a>
             <br/><br/>
             <p>Keep up the great work!</p>
             <p><strong>Luxtech Management</strong></p>
@@ -124,11 +156,11 @@ export const sendAdminWithdrawAlert = internalAction({
               <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>User:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${userName}</td></tr>
               <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Country:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${userCountry}</td></tr>
               <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Phone/Account:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${userPhone}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Amount:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee; color: #1abc9c; font-weight: bold;">${currency} ${amount.toLocaleString()}</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Amount:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee; color: #3b82f6; font-weight: bold;">${currency} ${amount.toLocaleString()}</td></tr>
               <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Method:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${method}</td></tr>
             </table>
             <br/>
-            <a href="https://flexqash.com/admin/withdrawals" style="background-color: #112a46; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Review in Admin Panel</a>
+            <a href="https://flexqash.com/admin/withdrawals" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Review in Admin Panel</a>
           </div>
         `
       });
