@@ -14,11 +14,27 @@ export const getOverview = query({
       
     const userIds = new Set(filteredUsers.map(u => u._id));
 
-    // Fetch the 500 most recent payments for stats
+    // 1. Fetch Exchange Rates for Currency Normalization
+    const allRates = await ctx.db.query("exchangeRates").collect();
+    const rateMap: Record<string, number> = { KES: 1 };
+    for (const r of allRates) {
+      rateMap[r.currency] = r.rateToKES;
+    }
+
+    // Helper to normalize foreign currencies to KES
+    const convertToKES = (amount: number, currency: string) => {
+      if (currency === "KES") return amount;
+      const rate = rateMap[currency];
+      if (!rate) return amount; // Fallback if rate is missing
+      return amount / rate;
+    };
+
+    // 2. Fetch the 500 most recent payments for stats
     const allPayments = await ctx.db.query("payments").order("desc").take(500);
     const filteredPayments = allPayments.filter(p => userIds.has(p.userId) && p.status === "paid" && p.purpose === "deposit");
     
-    const totalDeposits = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+    // Normalize and sum total deposits
+    const totalDeposits = filteredPayments.reduce((sum, p) => sum + convertToKES(p.amount, p.currency || "KES"), 0);
 
     const activity = allPayments
       .filter(p => userIds.has(p.userId))
@@ -37,38 +53,39 @@ export const getOverview = query({
          };
       });
 
-    // ----------------------------------------------------
-    // DYNAMIC GRAPH DATA: Calculate stats for the last 7 days
-    // ----------------------------------------------------
+    // 3. DYNAMIC GRAPH DATA: Calculate stats for the last 7 days
     const now = new Date();
     const chartData = [];
     
     for (let i = 6; i >= 0; i--) {
-      // Get the start and end of the target day
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
       const startOfDay = d.getTime();
       const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
       
-      // Get the short weekday label (e.g., "Mon", "Tue")
       const label = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const fullDate = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-      // Count users created on this day
       const dailyUsers = filteredUsers.filter(u => u._creationTime >= startOfDay && u._creationTime <= endOfDay).length;
       
-      // Sum deposits made on this day
+      // Normalize daily deposits to KES before adding to the chart
       const dailyDeposits = filteredPayments
         .filter(p => p._creationTime >= startOfDay && p._creationTime <= endOfDay)
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => sum + convertToKES(p.amount, p.currency || "KES"), 0);
 
-      chartData.push({ name: label, users: dailyUsers, deposits: dailyDeposits });
+      chartData.push({ 
+        name: label, 
+        fullDate,
+        users: dailyUsers, 
+        deposits: Math.round(dailyDeposits) 
+      });
     }
 
     return {
       totalUsers: filteredUsers.length,
-      totalDeposits,
+      totalDeposits: Math.round(totalDeposits),
       transactionCount: filteredPayments.length,
       recentActivity: activity,
-      chartData // Send the graph data to the frontend
+      chartData 
     };
   },
 });

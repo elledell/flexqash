@@ -5,7 +5,6 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
-// Complete updated countries list
 const COUNTRIES = [
   { code: "ALL", name: "All Countries", currency: "" },
   { code: "KE", name: "Kenya", currency: "KES" },
@@ -24,29 +23,38 @@ const COUNTRIES = [
 
 export default function AdminDashboardPage() {
   const [country, setCountry] = useState("ALL");
+  const [selectedDay, setSelectedDay] = useState<{ name: string, fullDate: string, users: number, deposits: number } | null>(null);
   const data = useQuery(api.adminDashboard.getOverview, { countryCode: country });
 
-  const selectedCurrency = COUNTRIES.find(c => c.code === country)?.currency || "MIXED";
+  const selectedCurrency = COUNTRIES.find(c => c.code === country)?.currency || "KES";
 
   if (data === undefined) {
     return <div className="font-bold text-[#112a46] p-8">Loading Dashboard...</div>;
   }
 
-  // Calculate the 24h user growth comparing the last item in the chart data to the previous one
   const todayUsers = data.chartData[6]?.users || 0;
   const yesterdayUsers = data.chartData[5]?.users || 0;
   const userGrowth = todayUsers - yesterdayUsers;
   const growthText = userGrowth >= 0 ? `+${userGrowth}` : `${userGrowth}`;
 
+  // Handler to capture chart clicks
+  const handleChartClick = (chartData: any) => {
+    if (chartData && chartData.activePayload && chartData.activePayload.length > 0) {
+      setSelectedDay(chartData.activePayload[0].payload);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl">
-      {/* Header & Country Switcher */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-[#112a46]">Overview</h1>
         
         <select
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={(e) => {
+            setCountry(e.target.value);
+            setSelectedDay(null); // Reset detail view on filter change
+          }}
           className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#112a46] shadow-sm outline-none focus:border-[#1abc9c]"
         >
           {COUNTRIES.map((c) => (
@@ -55,7 +63,6 @@ export default function AdminDashboardPage() {
         </select>
       </div>
 
-      {/* Top Stats Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-green-100 bg-green-50/30 p-6">
           <div className="flex justify-between items-start">
@@ -72,40 +79,53 @@ export default function AdminDashboardPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 text-orange-600">💳</span>
           </div>
           <h2 className="mt-2 text-3xl font-extrabold text-[#112a46]">
-            {selectedCurrency !== "MIXED" ? `${selectedCurrency} ` : ""}
-            {data.totalDeposits >= 1000 ? (data.totalDeposits/1000).toFixed(1) + 'k' : data.totalDeposits.toLocaleString()}
+            {selectedCurrency} {data.totalDeposits >= 1000 ? (data.totalDeposits/1000).toFixed(1) + 'k' : data.totalDeposits.toLocaleString()}
           </h2>
           <p className="mt-1 text-xs text-gray-400">{data.transactionCount} transactions</p>
         </div>
       </div>
 
-      {/* Dynamic Recharts */}
+      {/* Expanded Details Panel */}
+      {selectedDay && (
+        <div className="mb-6 animate-in fade-in zoom-in-95 duration-300 rounded-xl bg-gradient-to-r from-[#112a46] to-[#1abc9c] p-6 text-white shadow-lg flex justify-between items-center">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-widest text-white/80">Daily Breakdown</h3>
+            <p className="text-xl font-black">{selectedDay.fullDate}</p>
+          </div>
+          <div className="flex gap-8 text-right">
+            <div>
+              <p className="text-xs uppercase text-white/80 font-bold">New Users</p>
+              <p className="text-2xl font-black">{selectedDay.users}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-white/80 font-bold">Deposits</p>
+              <p className="text-2xl font-black">{selectedCurrency} {selectedDay.deposits.toLocaleString()}</p>
+            </div>
+            <button onClick={() => setSelectedDay(null)} className="ml-4 text-white/50 hover:text-white transition">✖</button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        
-        {/* Users Bar Chart */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-72 flex flex-col">
-          <h3 className="mb-4 text-sm font-medium text-[#112a46]">Weekly User Registrations</h3>
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-72 flex flex-col cursor-pointer transition hover:border-[#3b82f6]">
+          <h3 className="mb-4 text-sm font-medium text-[#112a46]">Weekly User Registrations (Click bar for details)</h3>
           <div className="flex-1 min-h-0 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.chartData}>
+              <BarChart data={data.chartData} onClick={handleChartClick}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
                 <YAxis hide />
-                <Tooltip 
-                  cursor={{ fill: '#f3f4f6' }} 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold', color: '#112a46' }} 
-                />
+                <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold', color: '#112a46' }} />
                 <Bar dataKey="users" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Deposits Area Chart */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-72 flex flex-col">
-          <h3 className="mb-4 text-sm font-medium text-[#112a46]">Weekly Deposits</h3>
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm h-72 flex flex-col cursor-pointer transition hover:border-[#1abc9c]">
+          <h3 className="mb-4 text-sm font-medium text-[#112a46]">Weekly Deposits (Click area for details)</h3>
           <div className="flex-1 min-h-0 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.chartData}>
+              <AreaChart data={data.chartData} onClick={handleChartClick}>
                 <defs>
                   <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#1abc9c" stopOpacity={0.4}/>
@@ -114,16 +134,12 @@ export default function AdminDashboardPage() {
                 </defs>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
                 <YAxis hide />
-                <Tooltip 
-                  cursor={{ stroke: '#1abc9c', strokeWidth: 1, strokeDasharray: '4 4' }} 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold', color: '#112a46' }} 
-                />
+                <Tooltip cursor={{ stroke: '#1abc9c', strokeWidth: 1, strokeDasharray: '4 4' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold', color: '#112a46' }} />
                 <Area type="monotone" dataKey="deposits" stroke="#1abc9c" strokeWidth={3} fillOpacity={1} fill="url(#colorDeposits)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
-
       </div>
 
       {/* Recent Activity Table */}
