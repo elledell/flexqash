@@ -14,28 +14,29 @@ export const getOverview = query({
       
     const userIds = new Set(filteredUsers.map(u => u._id));
 
-    // 1. Fetch Exchange Rates for Currency Normalization
+    // Fetch Exchange Rates
     const allRates = await ctx.db.query("exchangeRates").collect();
     const rateMap: Record<string, number> = { KES: 1 };
     for (const r of allRates) {
-      rateMap[r.currency] = r.rateToKES;
+      rateMap[r.currency] = typeof r.rateToKES === 'string' ? parseFloat(r.rateToKES) : r.rateToKES;
     }
 
-    // Helper to normalize foreign currencies to KES
     const convertToKES = (amount: number, currency: string) => {
       if (currency === "KES") return amount;
       const rate = rateMap[currency];
-      if (!rate) return amount; // Fallback if rate is missing
+      if (!rate) return amount; 
       return amount / rate;
     };
 
-    // 2. Fetch the 500 most recent payments for stats
-    const allPayments = await ctx.db.query("payments").order("desc").take(500);
+    // FIX: Use .collect() instead of .take(500) to ensure we do not miss older deposits
+    const allPayments = await ctx.db.query("payments").order("desc").collect();
+    
+    // Strictly calculate math using ONLY paid deposits
     const filteredPayments = allPayments.filter(p => userIds.has(p.userId) && p.status === "paid" && p.purpose === "deposit");
     
-    // Normalize and sum total deposits
     const totalDeposits = filteredPayments.reduce((sum, p) => sum + convertToKES(p.amount, p.currency || "KES"), 0);
 
+    // Allow ALL statuses to show in the recent activity list, but not in the math
     const activity = allPayments
       .filter(p => userIds.has(p.userId))
       .slice(0, 10)
@@ -53,7 +54,6 @@ export const getOverview = query({
          };
       });
 
-    // 3. DYNAMIC GRAPH DATA: Calculate stats for the last 7 days
     const now = new Date();
     const chartData = [];
     
@@ -67,7 +67,6 @@ export const getOverview = query({
 
       const dailyUsers = filteredUsers.filter(u => u._creationTime >= startOfDay && u._creationTime <= endOfDay).length;
       
-      // Normalize daily deposits to KES before adding to the chart
       const dailyDeposits = filteredPayments
         .filter(p => p._creationTime >= startOfDay && p._creationTime <= endOfDay)
         .reduce((sum, p) => sum + convertToKES(p.amount, p.currency || "KES"), 0);

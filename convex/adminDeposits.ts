@@ -28,7 +28,6 @@ export const getFinanceOverview = query({
     const allUsers = await ctx.db.query("users").collect();
     const userMap = new Map(allUsers.map((u) => [u._id, u]));
 
-    // STRICT CONSISTENCY: Only evaluate completed payments linked to an existing user
     const validCompletedPayments = allPayments.filter(p => p.status === "paid" && userMap.has(p.userId));
 
     const totalTx = validCompletedPayments.length;
@@ -79,13 +78,20 @@ export const getCountryDeposits = query({
 
     let deposits = await ctx.db.query("payments").order("desc").collect();
     
-    // STRICT CONSISTENCY: Strip out pending/failed transactions entirely 
-    deposits = deposits.filter((d) => countryUsers.has(d.userId) && d.status === "paid");
+    // Fetch ALL deposits for this country so the table/dropdown works
+    deposits = deposits.filter((d) => countryUsers.has(d.userId));
 
-    const totalTx = deposits.length;
-    const completedTx = deposits.length;
-    const volume = deposits.reduce((sum, p) => sum + p.amount, 0);
-    const successRate = totalTx > 0 ? 100 : 0;
+    // STRICT MATH: Only sum up and count 'paid' transactions for the top cards
+    const paidDeposits = deposits.filter(d => d.status === "paid");
+    const volume = paidDeposits.reduce((sum, p) => sum + p.amount, 0);
+    const completedTx = paidDeposits.length;
+    const totalTx = paidDeposits.length; 
+    const successRate = deposits.length > 0 ? Math.round((completedTx / deposits.length) * 100) : 0;
+
+    // Apply the dropdown filter for the table view
+    if (status && status !== "all") {
+      deposits = deposits.filter((d) => d.status === status);
+    }
 
     if (search) {
       const s = search.toLowerCase();
@@ -128,9 +134,6 @@ export const getCountryDeposits = query({
   },
 });
 
-// --------------------------------------------------------
-// Calculate Management Profits per Country
-// --------------------------------------------------------
 export const getManagementProfits = query({
   args: {},
   handler: async (ctx) => {
@@ -153,7 +156,6 @@ export const getManagementProfits = query({
       profitStats[c.code] = { revenue: 0, payouts: 0, profit: 0 };
     });
 
-    // 1. EXACT Revenue = Sum of actual PAID deposits (ignores pending and deleted users)
     for (const p of allPayments) {
       if (p.status !== "paid") continue;
       const u = userMap.get(p.userId);
@@ -165,7 +167,6 @@ export const getManagementProfits = query({
       }
     }
 
-    // 2. Expenses = Convert paid amounts BACK to the source country's currency
     for (const e of allEarnings) {
       if (["level_1", "level_2", "level_3"].includes(e.source)) {
         const sourceCountryCode = e.sourceCountry || "KE";
@@ -188,7 +189,6 @@ export const getManagementProfits = query({
       }
     }
 
-    // 3. Exact Management Profit = Revenue - Payouts
     const countryProfits = COUNTRIES.map((c) => {
       const stats = profitStats[c.code];
       return {
