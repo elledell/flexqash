@@ -2,7 +2,7 @@ import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-// Checks how many times a user has reviewed each hotel in the last 24 hours
+
 export const getUserReviewStats = query({
   args: {},
   handler: async (ctx) => {
