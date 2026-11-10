@@ -8,7 +8,8 @@ import { useEffect, useState, Suspense } from "react";
 import { api } from "../../convex/_generated/api";
 import "flag-icons/css/flag-icons.min.css"; 
 
-export default function LayoutContent({ children }: { children: React.ReactNode }) {
+// Renamed from default export to LayoutInner
+function LayoutInner({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -20,7 +21,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   const me = useQuery(api.users.me);
   const membershipStatus = useQuery(api.membership.status);
 
-  // The lock remains active: Admin passes freely, unactivated members are blocked.
   const isBlocked = 
     me && 
     membershipStatus && 
@@ -33,14 +33,12 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
         router.replace("/sign-in");
       }
     } else if (isBlocked) {
-      // CRITICAL FIX: Only redirect if they are not already on the membership page
       if (pathname !== "/membership") {
         router.replace("/membership");
       }
     }
   }, [isLoading, isAuthenticated, isBlocked, pathname, router]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname, searchParams]);
@@ -72,10 +70,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     }`;
 
   return (
-    // Locked the parent to exact screen height and hid body overflow for independent scrolling
     <div className="flex h-[100dvh] w-full overflow-hidden bg-[#f4f7fb] relative">
-      
-      {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -83,13 +78,11 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
         />
       )}
 
-      {/* Sidebar Navigation */}
       <aside 
         className={`fixed inset-y-0 left-0 z-50 w-64 flex-col border-r border-gray-100 bg-white shadow-sm transition-transform duration-300 md:static md:flex md:translate-x-0 ${
           isMobileMenuOpen ? "flex translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo Area */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-50 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <img src="/logo.png" alt="FlexQash Logo" className="h-8 w-8 object-contain" />
@@ -105,7 +98,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
           </button>
         </div>
 
-        {/* User Profile Summary */}
         <div className="mx-4 mt-6 flex shrink-0 items-center gap-3 rounded-2xl bg-gradient-to-r from-[#112a46] to-[#1a3a5e] p-4 text-white shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1abc9c] text-lg font-bold uppercase shadow-sm">
             {(me?.username || me?.name || "U").charAt(0)}
@@ -127,7 +119,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
           </div>
         </div>
 
-        {/* Admin Portal Gateway */}
         {me?.role === "admin" && (
           <div className="mx-4 mt-4">
             <Link 
@@ -139,7 +130,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
           </div>
         )}
 
-        {/* Navigation Links */}
         <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-thin scrollbar-thumb-gray-200">
           <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Main</div>
           <nav className="space-y-1 mb-8">
@@ -309,7 +299,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
             </Link>
           </nav>
 
-          {/* Footer Actions */}
           <div className="mt-8 border-t border-gray-100 pt-6 space-y-2">
             <Link href="/profile" className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-200 shadow-sm text-sm text-gray-700">👤</div>
@@ -329,9 +318,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto">
-        {/* Mobile Header Trigger */}
         <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-100 bg-white px-4 md:hidden">
           <Link href="/dashboard" className="flex items-center gap-2">
             <img src="/logo.png" alt="FlexQash Logo" className="h-8 w-8 object-contain" />
@@ -344,9 +331,17 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
           </button>
         </div>
 
-        {/* Page Content */}
         {children}
       </main>
     </div>
+  );
+}
+
+// NEW: Default Export wrapping the layout in a Suspense boundary
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] text-[#112a46] font-medium">Loading Layout...</div>}>
+      <LayoutInner>{children}</LayoutInner>
+    </Suspense>
   );
 }
