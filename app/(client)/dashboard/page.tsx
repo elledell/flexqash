@@ -1,8 +1,7 @@
 "use client";
 
 import { useConvexAuth, useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Eye, EyeOff, Wallet, ArrowDownToLine, Users, Gift, CreditCard } from "lucide-react"; 
@@ -10,7 +9,6 @@ import Link from "next/link";
 
 export default function DashboardPage() {
   const { isLoading, isAuthenticated } = useConvexAuth();
-  const router = useRouter();
   
   const me = useQuery(api.users.me);
   const stats = useQuery(api.dashboard.getStats);
@@ -20,19 +18,13 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [showBalances, setShowBalances] = useState(true);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace("/sign-in");
-    } else if (me && membershipStatus && me.role !== "admin" && !membershipStatus.active) {
-      router.replace("/membership");
-    }
-  }, [isLoading, isAuthenticated, me, membershipStatus, router]);
-
-  if (!me || stats === undefined || membershipStatus === undefined) {
+  if (isLoading || !me || stats === undefined || membershipStatus === undefined) {
     return <div className="flex min-h-screen items-center justify-center text-[#112a46] font-medium">Loading dashboard...</div>;
   }
 
-  if (!membershipStatus?.active) return null;
+  // Hard block: If they aren't activated, render absolutely nothing.
+  // The layout.tsx will safely handle redirecting them to /membership.
+  if (!membershipStatus?.active || !isAuthenticated) return null;
 
   if (stats === null) {
     return <div className="p-8 text-center text-red-500 font-bold">Error loading dashboard data.</div>;
@@ -85,7 +77,6 @@ export default function DashboardPage() {
             </h2>
           </div>
           
-          {/* UPDATED EXPENSE CARD WITH ICON */}
           <div className="flex items-center justify-between gap-6 rounded-xl border border-white/30 bg-black/15 px-6 py-4 backdrop-blur-md">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/20">
               <CreditCard className="h-5 w-5 text-white" />
@@ -99,7 +90,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4-Grid Metrics with Left-Aligned Icons */}
+      {/* 4-Grid Metrics */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center gap-4 rounded-2xl bg-[#3498db] p-5 text-white shadow-md transition-transform hover:scale-[1.02]">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
@@ -257,7 +248,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* NEW TIMETABLE SECTION */}
+      {/* TIMETABLE SECTION */}
       <div className="mb-6 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
         <div className="flex items-center justify-between border-b border-gray-50 p-6">
           <h3 className="flex items-center gap-3 text-lg font-black text-[#112a46] tracking-wide uppercase">

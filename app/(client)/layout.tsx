@@ -8,7 +8,7 @@ import { useEffect, useState, Suspense } from "react";
 import { api } from "../../convex/_generated/api";
 import "flag-icons/css/flag-icons.min.css"; 
 
-function LayoutContent({ children }: { children: React.ReactNode }) {
+export default function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -20,6 +20,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const me = useQuery(api.users.me);
   const membershipStatus = useQuery(api.membership.status);
 
+  // The lock remains active: Admin passes freely, unactivated members are blocked.
   const isBlocked = 
     me && 
     membershipStatus && 
@@ -28,11 +29,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/sign-in");
+      if (pathname !== "/sign-in") {
+        router.replace("/sign-in");
+      }
     } else if (isBlocked) {
-      router.replace("/membership");
+      // CRITICAL FIX: Only redirect if they are not already on the membership page
+      if (pathname !== "/membership") {
+        router.replace("/membership");
+      }
     }
-  }, [isLoading, isAuthenticated, isBlocked, router]);
+  }, [isLoading, isAuthenticated, isBlocked, pathname, router]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -324,43 +330,23 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex min-w-0 flex-1 flex-col h-[100dvh]">
-        {/* Top Header */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white/50 px-4 md:px-6 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-gray-500 shadow-sm md:hidden hover:text-[#1abc9c]"
-            >
-              ☰
-            </button>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm hover:text-[#1abc9c]">🌙</button>
-            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm hover:text-[#1abc9c]">⚙️</button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg shadow-sm cursor-default overflow-hidden">
-              {me?.country ? (
-                <span className={`fi fi-${me.country.toLowerCase()} text-xl rounded-sm`} />
-              ) : (
-                <span className="text-sm">🌍</span>
-              )}
-            </div>
-          </div>
-        </header>
+      <main className="flex-1 overflow-y-auto">
+        {/* Mobile Header Trigger */}
+        <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-100 bg-white px-4 md:hidden">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <img src="/logo.png" alt="FlexQash Logo" className="h-8 w-8 object-contain" />
+          </Link>
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="rounded-lg p-2 text-gray-600 hover:bg-gray-50"
+          >
+            ☰
+          </button>
+        </div>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
-  );
-}
-
-export default function MemberLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#f4f7fb]">Loading...</div>}>
-      <LayoutContent>{children}</LayoutContent>
-    </Suspense>
   );
 }
